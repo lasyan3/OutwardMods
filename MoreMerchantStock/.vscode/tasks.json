@@ -1,0 +1,149 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build .dll",
+            "type": "shell",
+            "windows": {
+                "command": "dotnet build --configuration Release",
+            },
+            "linux": {
+                "command": "",
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Quit Outward",
+            "type": "shell",
+            "windows": {
+                "command": "Get-Process Outward -ErrorAction SilentlyContinue | Stop-Process -PassThru; Exit 0"
+            },
+            "linux": {
+                "command": ""
+            },
+            "group": "test",
+            "presentation": {
+                "reveal": "never",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "Deploy .dll (Steam)",
+            "type": "shell",
+            "windows": {
+                "command": "Copy-Item",
+                "args": [
+                    "-Path",
+                    "${workspaceFolder}\\bin\\Release\\MyPartialityMod.dll",
+                    "-Destination",
+                    "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Outward\\Mods",
+                    "-Force"
+                ]
+            },
+            "linux": {
+                "command": ""
+            },
+            "group": "test",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "clear": true
+            },
+            "dependsOn": [
+                "Quit Outward",
+                "Build .dll"
+            ]
+        },
+        {
+            "label": "Run Outward (Steam)",
+            "type": "shell",
+            "windows": {
+                "command": "explorer",
+                "args": [
+                    "steam://rungameid/794260"
+                ]
+            },
+            "linux": {
+                "command": ""
+            },
+            "group": "test",
+            "presentation": {
+                "reveal": "never",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "Test in Outward (Steam)",
+            "type": "shell",
+            "windows": {
+                "command": "explorer",
+                "args": [
+                    "steam://rungameid/794260"
+                ]
+            },
+            "linux": {
+                "command": ""
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "never",
+                "panel": "shared",
+                "clear": true
+            },
+            "dependsOn": "Deploy .dll (Steam)"
+        },
+        {
+            "label": "Open Outward Mods folder (Steam)",
+            "type": "shell",
+            "windows": {
+                "command": "explorer",
+                "args": [
+                    "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Outward\\Mods"
+                ]
+            },
+            "linux": {
+                "command": ""
+            },
+            "group": "test",
+            "presentation": {
+                "reveal": "never",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "Open Outward output_log.txt (Steam)",
+            "type": "shell",
+            "windows": {
+                "command": "code",
+                "args": [
+                    "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Outward\\Outward_Data\\output_log.txt"
+                ]
+            },
+            "linux": {
+                "command": ""
+            },
+            "group": "test",
+            "presentation": {
+                "reveal": "never",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+    ]
+}

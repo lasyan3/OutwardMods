@@ -1,0 +1,691 @@
+﻿using System;
+using UnityEngine;
+using Partiality.Modloader;
+using On;
+using ODebug;
+using Harmony;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Linq;
+using NodeCanvas.DialogueTrees;
+using UnityEngine.AI;
+
+public class StrDrop
+{
+    public string ItemId;
+    public int MinCount;
+    public int MaxCount;
+}
+public class MyPartialityMod : PartialityMod
+{
+    //Dictionary<string, List<StrDrop>> m_itemDrops;
+
+    // Constructor setting the fields of the PartialityMod class
+    public MyPartialityMod()
+    {
+        this.ModID = "MyFirstMod";
+        this.Version = "1";
+        //this.loadPriority = 0;
+        this.author = "lasyan3";
+    }
+
+    // Init() is called the moment the mod is loaded. Use this to set properties or load configs, and the like.
+    public override void Init()
+    {
+        base.Init();
+    }
+
+    // OnLoad() is called after all mods have loaded. Do most of your first-time code here. Creating objects, getting stuff from other mods, etc.
+    public override void OnLoad()
+    {
+        base.OnLoad();
+    }
+
+    // OnDisable() is called when a mod is disabled.
+    public override void OnDisable()
+    {
+        base.OnDisable();
+    }
+
+    // OnEnable() is called when a mod is enabled (also when it's loaded)
+    public override void OnEnable()
+    {
+        base.OnEnable();
+        var harmony = HarmonyInstance.Create("com.timb3r.safarimod");
+
+        //On.AreaManager.ctor += AreaManager_ctor;
+        //On.AreaManager.IsAreaExpired += AreaManager_IsAreaExpired;
+
+        On.MerchantPouch.RefreshInventory += ForceRefreshInventory;
+
+        //m_itemDrops = new Dictionary<string, List<StrDrop>>();
+        //On.GuaranteedDrop.GenerateDrop += UpdateGuaranteedGenerateDrop; // Issue: stocks keep increasing!
+        //On.DropTable.GenerateDrop += UpdateMainGenerateDrop;
+        //On.ItemDropper.GenerateDrop += ItemDropper_GenerateDrop; // Never called
+        //On.Dropable.InitReferences += Dropable_InitReferences; // Issue: unable to identify Merchant containers
+        //On.Dropable.GenerateContents += Dropable_GenerateContents;
+        //On.Dropable.LateInit += Dropable_LateInit;
+        //On.Dropable.Start += Dropable_Start;
+        //On.Dropable.StartInit += Dropable_StartInit;
+        //On.Dropable.Update += Dropable_Update;
+        On.ItemDropper.GenerateItem += ItemDropper_GenerateItem;
+
+        //On.DeveloperToolManager.ctor += DeveloperToolManager_ctor;
+        try
+        {
+            //On.InteractionCondition.Validate += InteractionCondition_Validate;
+            //On.InteractionCondition.ctor += InteractionCondition_ctor;
+            //On.InteractionActivator.OnActivateBasicInteraction += InteractionActivator_OnActivateBasicInteraction;
+            //On.InteractionBase.Start += InteractionBase_Start;
+            //On.InteractionBase.OnActivate += InteractionBase_OnActivate;
+            //On.DialogueStarter.StartDialogue_2 += DialogueStarter_StartDialogue_2;
+            //On.Character.OnInteractButtonUp += Character_OnInteractButtonUp;
+            //On.CharacterDialogueInteractionManager.OnActivateBasicInteraction += CharacterDialogueInteractionManager_OnActivateBasicInteraction;
+
+            // Identifier le type d'objet pour les NPC
+            // AiCharacter ? NON
+            // Character ? NON
+            // CharacterAI ? MEH
+            // Item ? Network ? Global ?
+            // membre de NPCInteraction ?
+            // SNPC ?
+            //On.CharacterAI.ctor += CharacterAI_ctor;
+            //On.SNPC.ctor += SNPC_ctor;
+            //On.Character.OnDisable += Character_OnDisable;
+            //On.CharacterAI.OnDisable += CharacterAI_OnDisable;
+            //On.DialogueActorLocalize.OnDisable += DialogueActorLocalize_OnDisable;
+            //On.SNPCMoving.ctor += SNPCMoving_ctor;
+            //On.SNPCMoving.Init += SNPCMoving_Init;
+            //On.SNPC.OnEnable += SNPC_OnEnable;
+            OLogger.Log("lasyan3 - OnEnable DONE");
+        }
+        catch (Exception ex)
+        {
+            OLogger.Error(ex.Message);
+        }
+    }
+
+    [HarmonyPatch(typeof(InteractionBase), "Start", new Type[] { })]
+    static class InteractionBase_Start_Patch
+    {
+        static void Prefix() {
+            OLogger.Log("ok");
+        }
+    }
+
+    private void SNPC_OnEnable(On.SNPC.orig_OnEnable orig, SNPC self)
+    {
+        orig.Invoke(self);
+        OLogger.Log($"SNPC_OnEnable: {self.LocKey}");
+    }
+
+    private void SNPCMoving_Init(On.SNPCMoving.orig_Init orig, SNPCMoving self)
+    {
+        orig.Invoke(self);
+        try
+        {
+            self.WalkAnimSpeed = 5.0f;
+            NavMeshAgent obj = (NavMeshAgent)AccessTools.Field(typeof(SNPCMoving), "m_navMeshAgent").GetValue(self);
+            OLogger.Log($"SNPCMoving_Init: {obj.radius}");
+            obj.radius = 10f;
+            AccessTools.Field(typeof(SNPCMoving), "m_navMeshAgent").SetValue(self, obj);
+        }
+        catch (Exception ex)
+        {
+            OLogger.Error(ex.Message);
+        }
+    }
+
+    private void SNPCMoving_ctor(On.SNPCMoving.orig_ctor orig, SNPCMoving self)
+    {
+        orig.Invoke(self);
+        self.WalkAnimSpeed = 5.0f;
+    }
+
+    private void DialogueActorLocalize_OnDisable(On.DialogueActorLocalize.orig_OnDisable orig, DialogueActorLocalize self)
+    {
+        // name_merchant_monsoonhouseseller_01
+        OLogger.Log($"DialogueActorLocalize_OnDisable: {self.LocKey}");
+    }
+
+    private void CharacterAI_OnDisable(On.CharacterAI.orig_OnDisable orig, CharacterAI self)
+    {
+        OLogger.Log($"CharacterAI_OnDisable: {self.name}");
+    }
+
+    private void Character_OnDisable(On.Character.orig_OnDisable orig, Character self)
+    {
+        OLogger.Log($"Character_OnDisable: {self.Name}");
+    }
+
+    private void SNPC_ctor(On.SNPC.orig_ctor orig, SNPC self)
+    {
+        orig.Invoke(self);
+        try
+        {
+            OLogger.Log($"SNPC: {self}");
+        }
+        catch (Exception ex)
+        {
+            OLogger.Error(ex.Message);
+        }
+    }
+
+    private void CharacterAI_ctor(On.CharacterAI.orig_ctor orig, CharacterAI self)
+    {
+        orig.Invoke(self);
+        try
+        {
+            //OLogger.Log($"CharacterAI: {self}");
+        }
+        catch (Exception ex)
+        {
+        }
+    }
+
+    private void InteractionCondition_ctor(On.InteractionCondition.orig_ctor orig, InteractionCondition self)
+    {
+        orig.Invoke(self);
+        OLogger.Log($"IC_ctor: {self.GetType().Name}");
+        /*if (self.GetType() == typeof(NPCInteraction))
+        {
+            OLogger.Log(((NPCInteraction)self).Text);
+        }*/
+    }
+
+    private bool InteractionCondition_Validate(On.InteractionCondition.orig_Validate orig, InteractionCondition self, Character _charUsing)
+    {
+        OLogger.Log($"IC_Validate: {self.GetType().Name} ({orig.Invoke(self, _charUsing)})");
+        if (self.GetType().Name == "HasQuestEventOccuredInteractionCondition")
+        {
+            HasQuestEventOccuredInteractionCondition c = (HasQuestEventOccuredInteractionCondition)self;
+        }
+        /*try
+        {
+            Character.StoryFactions obj = (Character.StoryFactions)AccessTools.Field(typeof(SkillSlot), "m_requiredAffiliatedFaction").GetValue(self);
+            OLogger.Log($"InteractionCondition_CheckCondition: {obj}");
+            AccessTools.Field(typeof(SkillSlot), "m_requiredAffiliatedFaction").SetValue(self, Character.StoryFactions.None);
+        }
+        catch (Exception ex)
+        {
+            OLogger.Error(ex.Message);
+        }*/
+        return orig.Invoke(self, _charUsing);
+    }
+
+    private void CharacterDialogueInteractionManager_OnActivateBasicInteraction(On.CharacterDialogueInteractionManager.orig_OnActivateBasicInteraction orig, CharacterDialogueInteractionManager self, Character _instigator, int _toggleState)
+    {
+        OLogger.Log($"CharacterDialogueInteractionManager_OnActivateBasicInteraction");
+        orig.Invoke(self, _instigator, _toggleState);
+    }
+
+    private void Character_OnInteractButtonUp(On.Character.orig_OnInteractButtonUp orig, Character self)
+    {
+        OLogger.Log($"Character_OnInteractButtonUp");
+        orig.Invoke(self);
+    }
+
+    private void DialogueStarter_StartDialogue_2(On.DialogueStarter.orig_StartDialogue_2 orig, DialogueStarter self, Character _instigator, Action<bool> callback, bool _isBranching)
+    {
+        OLogger.Log($"DialogueStarter_StartDialogue_2");
+        orig.Invoke(self, _instigator, callback, _isBranching);
+    }
+
+    private void InteractionBase_OnActivate(On.InteractionBase.orig_OnActivate orig, InteractionBase self)
+    { // Called on activating (like talking to npc)
+      /*orig.Invoke(self);
+      try
+      {
+          OLogger.Log($"IB_OnActivate: {self.GetType().Name}");
+          if (self.GetType() == typeof(NPCInteraction))
+          {
+              //OLogger.Log($"IB_Start: {self.GetType().Name}");
+              OLogger.Log($"IB_OnActivate: {((NPCInteraction)self).Text}");
+              DialogueActor field = (DialogueActor)AccessTools.Field(typeof(NPCInteraction), "DialogueActor").GetValue(self);
+              OLogger.Log(" > " + (field == null ? "(null)" : field.actorRefKey));
+              Character ch = field.gameObject.GetComponent<Character>();
+              //"name_unpc_mofat01"
+              OLogger.Log(">> " + (ch == null ? "(null)" : ch.Name));
+          }
+          //Character field = (Character)AccessTools.Field(typeof(NPCInteraction), "m_character").GetValue(self);
+          //OLogger.Log($" > {field}");
+      }
+      catch (Exception ex)
+      {
+          OLogger.Error(ex.Message);
+      }*/
+        if (self.GetType() != typeof(NPCInteraction))
+        {
+            orig.Invoke(self);
+            return;
+        }
+        NPCInteraction npci = (NPCInteraction)self;
+        try
+        {
+            bool flag = false;
+            if ((bool)npci.ExtTree)
+            {
+                OLogger.Log($"LastCharacter={npci.LastCharacter.Name}");
+                npci.LastCharacter.SetInDialogue(npci);
+                if (npci.LastCharacter.IsLocalPlayer)
+                {
+                    OLogger.Log($"IsLocalPlayer");
+                    if ((bool)npci.LastCharacter.CharacterUI && npci.LastCharacter.CharacterUI.IsDialogueInProgress)
+                    {
+                        flag = true;
+                    }
+                    else
+                    {
+                        if (!npci.CanInteractWithMultiplePlayers && npci.OnLockEvent != null)
+                        {
+                            npci.OnLockEvent(arg0: true);
+                        }
+                        SceneInteractionManager.Instance.RequestStartDialogue(npci, npci.LastCharacter);
+                    }
+                }
+                else if (!npci.CanInteractWithMultiplePlayers)
+                {
+                    flag = true;
+                }
+            }
+            /*npci.OnActivate();
+            if (!npci.InstantActivationDone && flag)
+            {
+                npci.OnActivationDone();
+            }*/
+        }
+        catch (Exception ex)
+        {
+            OLogger.Error(ex.Message);
+        }
+    }
+
+    private void InteractionBase_Start(On.InteractionBase.orig_Start orig, InteractionBase self)
+    { // Called on loading the world
+        try
+        {
+            if (self.GetType() == typeof(NPCInteraction))
+            {
+                OLogger.Log($"IB_Start: {self.GetType().Name}");
+                OLogger.Log($"IB_Start: {((NPCInteraction)self).Text}");
+                //Character field = (Character)AccessTools.Field(typeof(NPCInteraction), "m_character").GetValue(self);
+                //OLogger.Log($" > {field}");
+            }
+        }
+        catch (Exception ex)
+        {
+            OLogger.Error(ex.Message);
+        }
+        orig.Invoke(self);
+    }
+
+    private void InteractionActivator_OnActivateBasicInteraction(On.InteractionActivator.orig_OnActivateBasicInteraction orig, InteractionActivator self, Character _character, int _toggleState)
+    {
+        OLogger.Log($"InteractionActivator_OnActivateBasicInteraction");
+        orig.Invoke(self, _character, _toggleState);
+    }
+
+    private void ItemDropper_GenerateItem(On.ItemDropper.orig_GenerateItem orig, ItemDropper self, ItemContainer _container, BasicItemDrop _itemDrop, int _spawnAmount)
+    {
+        /*try
+        {
+            if ((_itemDrop.DroppedItem.IsFood || _itemDrop.DroppedItem.IsIngredient)
+                && !_itemDrop.DroppedItem.IsDrink
+                && !_itemDrop.DroppedItem.IsEquippable && !_itemDrop.DroppedItem.IsDeployable)
+            {
+                _spawnAmount *= 10;
+                OLogger.Log($"ItemDropper_GenerateItem: {_itemDrop.DroppedItem.DisplayName}={_spawnAmount}");
+            }
+        }
+        catch (Exception ex)
+        {
+            OLogger.Error(ex.Message);
+        }*/
+        _itemDrop.DroppedItem.InitCachedInfos();
+        if (_container.GetType() == typeof(MerchantPouch)
+            && (_itemDrop.DroppedItem.IsFood || _itemDrop.DroppedItem.IsIngredient)
+            && !_itemDrop.DroppedItem.IsDrink
+            && !_itemDrop.DroppedItem.IsEquippable && !_itemDrop.DroppedItem.IsDeployable)
+        {
+            _spawnAmount *= 3;
+            OLogger.Log($"{_itemDrop.DroppedItem.DisplayName}={_spawnAmount}");
+        }
+        //_spawnAmount *= 10;
+        //OLogger.Log($"{_itemDrop.DroppedItem.DisplayName}={_itemDrop.DroppedItem.IsFood || _itemDrop.DroppedItem.IsIngredient} {_spawnAmount}");
+        orig.Invoke(self, _container, _itemDrop, _spawnAmount);
+    }
+
+    private void Dropable_Update(On.Dropable.orig_Update orig, Dropable self)
+    {
+        orig.Invoke(self);
+        OLogger.Log($"Dropable_Update");
+        try
+        {
+            FieldInfo f_ic = AccessTools.Field(typeof(Dropable), "m_targetContainer");
+            ItemContainer container = (ItemContainer)f_ic.GetValue(self);
+            OLogger.Log($"Dropable_Update: {container.DisplayName}");
+        }
+        catch (Exception) { }
+    }
+
+    private void Dropable_StartInit(On.Dropable.orig_StartInit orig, Dropable self)
+    {
+        orig.Invoke(self);
+        OLogger.Log($"Dropable_StartInit");
+        try
+        {
+            OLogger.Log($"Dropable_StartInit - m_uid={(string)AccessTools.Field(typeof(Dropable), "m_uid").GetValue(self)}");
+            var c = self.GetComponent<ItemContainer>();
+            OLogger.Log(c.GetType().Name);
+
+            FieldInfo f_ic = AccessTools.Field(typeof(Dropable), "m_targetContainer");
+            ItemContainer container = (ItemContainer)f_ic.GetValue(self);
+            OLogger.Log($"Dropable_StartInit: {container.DisplayName}");
+        }
+        catch (Exception) { }
+    }
+
+    private void Dropable_Start(On.Dropable.orig_Start orig, Dropable self)
+    {
+        orig.Invoke(self);
+        OLogger.Log($"Dropable_Start");
+        try
+        {
+            FieldInfo f_ic = AccessTools.Field(typeof(Dropable), "m_targetContainer");
+            ItemContainer container = (ItemContainer)f_ic.GetValue(self);
+            OLogger.Log($"Dropable_Start: {container.DisplayName}");
+        }
+        catch (Exception) { }
+    }
+
+    private void Dropable_LateInit(On.Dropable.orig_LateInit orig, Dropable self)
+    {
+        orig.Invoke(self);
+        OLogger.Log($"Dropable_LateInit");
+        try
+        {
+            FieldInfo f_ic = AccessTools.Field(typeof(Dropable), "m_targetContainer");
+            ItemContainer container = (ItemContainer)f_ic.GetValue(self);
+            OLogger.Log($"Dropable_LateInit: {container.DisplayName}");
+        }
+        catch (Exception) { }
+    }
+
+    private void Dropable_GenerateContents(On.Dropable.orig_GenerateContents orig, Dropable self)
+    {
+        orig.Invoke(self);
+        OLogger.Log($"Dropable_GenerateContents");
+        try
+        {
+            FieldInfo f_ic = AccessTools.Field(typeof(Dropable), "m_targetContainer");
+            ItemContainer container = (ItemContainer)f_ic.GetValue(self);
+            OLogger.Log($"Dropable_GenerateContents: {container.DisplayName}");
+        }
+        catch (Exception) { }
+    }
+
+    private void UpdateMainGenerateDrop(On.DropTable.orig_GenerateDrop orig, DropTable self, ItemContainer _dropContainer)
+    {
+        OLogger.Log($"UpdateMainGenerateDrop: {_dropContainer.DisplayName}", "ffffffff", "drop");
+        try
+        {
+            /*if (!m_itemDrops.ContainsKey(_dropContainer.UID))
+            {
+                m_itemDrops.Add(_dropContainer.UID, new List<StrDrop>());
+            }*/
+
+            FieldInfo f_itemDrops = AccessTools.Field(typeof(DropTable), "m_itemDrops");
+            List<ItemDropChance> lstDrops = (List<ItemDropChance>)f_itemDrops.GetValue(self);
+            List<int> lstIds = new List<int>();
+            foreach (var item in lstDrops)
+            {
+                if (lstIds.Contains(item.DroppedItem.ItemID)) continue;
+                /*var myDrop = m_itemDrops[_dropContainer.UID].FirstOrDefault(r => r.ItemId == item.DroppedItem.UID);
+                if (myDrop == null)
+                {
+                    m_itemDrops[_dropContainer.UID].Add(new StrDrop
+                    {
+                        ItemId = item.DroppedItem.UID,
+                        MinCount = item.MinDropCount,
+                        MaxCount = item.MaxDropCount
+                    });
+                }
+                else
+                {
+                    item.MinDropCount = myDrop.MinCount;
+                    item.MaxDropCount = myDrop.MaxCount;
+                }*/
+
+                //item.DroppedItem.DoUpdate();
+                item.DroppedItem.InitCachedInfos();
+                //item.DroppedItem.ProcessInit();
+                //item.DroppedItem.RefreshAfterLoading();
+                //OLogger.Log($"{item.DroppedItem.DisplayName}: {item.DroppedItem.IsFood} {item.DroppedItem.IsIngredient} {item.DroppedItem.IsEquippable} {item.DroppedItem.IsStackable}", "ffffffff", "drop");
+                if ((item.DroppedItem.IsFood || item.DroppedItem.IsIngredient)
+                    && !item.DroppedItem.IsDrink
+                    && !item.DroppedItem.IsEquippable && !item.DroppedItem.IsDeployable)
+                {
+                    OLogger.Log($"   {item.DroppedItem.DisplayName}", "ffffffff", "drop");
+                    item.MinDropCount += 10;
+                    item.MaxDropCount += 50;
+                    //item.MinDropCount = item.MaxDropCount;
+                    //OLogger.Log($" --> {item.MaxDropCount}", "ffffffff", "drop");
+                    lstIds.Add(item.DroppedItem.ItemID);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            OLogger.Log(ex.Message);
+        }
+
+        orig.Invoke(self, _dropContainer);
+    }
+
+    private void UpdateGuaranteedGenerateDrop(On.GuaranteedDrop.orig_GenerateDrop orig, GuaranteedDrop self, ItemContainer _container)
+    {
+        OLogger.Log($"UpdateGuaranteedGenerateDrop: {_container.DisplayName}", "ffffffff", "drop");
+        try
+        {
+            /*if (!m_itemDrops.ContainsKey(_container.UID))
+            {
+                m_itemDrops.Add(_container.UID, new List<StrDrop>());
+            }*/
+
+            FieldInfo f_itemDrops = AccessTools.Field(typeof(GuaranteedDrop), "m_itemDrops");
+            List<BasicItemDrop> lstDrops = (List<BasicItemDrop>)f_itemDrops.GetValue(self);
+            List<int> lstIds = new List<int>();
+            foreach (var item in lstDrops)
+            {
+                if (lstIds.Contains(item.DroppedItem.ItemID)) continue;
+                /*var myDrop = m_itemDrops[_container.UID].FirstOrDefault(r => r.ItemId == item.DroppedItem.UID);
+                if (myDrop == null)
+                {
+                    m_itemDrops[_container.UID].Add(new StrDrop
+                    {
+                        ItemId = item.DroppedItem.UID,
+                        MinCount = item.MinDropCount,
+                        MaxCount = item.MaxDropCount
+                    });
+                }
+                else
+                {
+                    item.MinDropCount = myDrop.MinCount;
+                    item.MaxDropCount = myDrop.MaxCount;
+                }*/
+
+                //item.DroppedItem.DoUpdate();
+                item.DroppedItem.InitCachedInfos();
+                //item.DroppedItem.ProcessInit();
+                //item.DroppedItem.RefreshAfterLoading();
+                //OLogger.Log($"{item.DroppedItem.DisplayName}: {item.DroppedItem.IsFood} {item.DroppedItem.IsIngredient} {item.DroppedItem.IsEquippable} {item.DroppedItem.IsStackable}", "ffffffff", "drop");
+                if ((item.DroppedItem.IsFood || item.DroppedItem.IsIngredient)
+                    && !item.DroppedItem.IsDrink
+                    && !item.DroppedItem.IsEquippable && !item.DroppedItem.IsDeployable)
+                {
+                    OLogger.Log($"   {item.DroppedItem.DisplayName}: {item.DroppedItem.Value}", "ffffffff", "drop");
+                    item.MinDropCount += 10;
+                    item.MaxDropCount += 50;
+                    //OLogger.Log($" --> {item.MaxDropCount}", "ffffffff", "drop");
+
+                    lstIds.Add(item.DroppedItem.ItemID);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            OLogger.Log(ex.Message);
+        }
+
+        orig.Invoke(self, _container);
+    }
+    private void Dropable_InitReferences(On.Dropable.orig_InitReferences orig, Dropable self)
+    {
+        orig.Invoke(self);
+        OLogger.Log($"Dropable_InitReferences");
+        try
+        {
+            FieldInfo f_ic = AccessTools.Field(typeof(Dropable), "m_targetContainer");
+            ItemContainer container = (ItemContainer)f_ic.GetValue(self);
+            OLogger.Log($"Dropable_InitReferences: {container.DisplayName}");
+        }
+        catch (Exception) { }
+
+        #region Main Drop Table
+        try
+        {
+            //OLogger.Log($"m_mainDropTables");
+            List<DropTable> mainDropTables = (List<DropTable>)AccessTools.Field(typeof(Dropable), "m_mainDropTables").GetValue(self);
+            foreach (DropTable mainDrop in mainDropTables)
+            {
+                //OLogger.Log($"{mainDrop.name}: {mainDrop.tag}");
+                List<ItemDropChance> lstDrops = (List<ItemDropChance>)AccessTools.Field(typeof(DropTable), "m_itemDrops").GetValue(mainDrop);
+                List<int> lstIds = new List<int>();
+                foreach (var item in lstDrops)
+                {
+                    if (lstIds.Contains(item.DroppedItem.ItemID)) continue;
+                    //item.DroppedItem.DoUpdate();
+                    item.DroppedItem.InitCachedInfos();
+                    //item.DroppedItem.ProcessInit();
+                    //item.DroppedItem.RefreshAfterLoading();
+                    //OLogger.Log($"{item.DroppedItem.DisplayName}: {item.DroppedItem.IsFood} {item.DroppedItem.IsIngredient} {item.DroppedItem.IsEquippable} {item.DroppedItem.IsStackable}", "ffffffff", "drop");
+                    if ((item.DroppedItem.IsFood || item.DroppedItem.IsIngredient)
+                        && !item.DroppedItem.IsDrink
+                        && !item.DroppedItem.IsEquippable && !item.DroppedItem.IsDeployable)
+                    {
+                        //OLogger.Log($"{item.DroppedItem.DisplayName}", "ffffffff", "drop");
+                        item.MinDropCount *= 10;
+                        item.MaxDropCount *= 10;
+                        item.MinDropCount = item.MaxDropCount;
+                        //OLogger.Log($" --> {item.MaxDropCount}", "ffffffff", "drop");
+                        lstIds.Add(item.DroppedItem.ItemID);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            OLogger.Log(ex.Message);
+        }
+        #endregion
+
+        if (self.HasGuaranteedDrops)
+        {
+            //OLogger.Log($"m_allGuaranteedDrops");
+            try
+            {
+                FieldInfo f_agds = AccessTools.Field(typeof(Dropable), "m_allGuaranteedDrops");
+                List<GuaranteedDrop> allGuarDrops = (List<GuaranteedDrop>)f_agds.GetValue(self);
+                foreach (GuaranteedDrop gd in allGuarDrops)
+                {
+                    FieldInfo f_itemDrops = AccessTools.Field(typeof(GuaranteedDrop), "m_itemDrops");
+                    List<BasicItemDrop> lstDrops = (List<BasicItemDrop>)f_itemDrops.GetValue(gd);
+                    List<int> lstIds = new List<int>();
+                    foreach (var item in lstDrops)
+                    {
+                        if (lstIds.Contains(item.DroppedItem.ItemID)) continue;
+                        //item.DroppedItem.DoUpdate();
+                        item.DroppedItem.InitCachedInfos();
+                        //item.DroppedItem.ProcessInit();
+                        //item.DroppedItem.RefreshAfterLoading();
+                        //OLogger.Log($"{item.DroppedItem.DisplayName}: {item.DroppedItem.IsFood} {item.DroppedItem.IsIngredient} {item.DroppedItem.IsEquippable} {item.DroppedItem.IsStackable}", "ffffffff", "drop");
+                        if ((item.DroppedItem.IsFood || item.DroppedItem.IsIngredient)
+                            && !item.DroppedItem.IsDrink
+                            && !item.DroppedItem.IsEquippable && !item.DroppedItem.IsDeployable)
+                        {
+                            //OLogger.Log($"{item.DroppedItem.DisplayName}", "ffffffff", "drop");
+                            item.MinDropCount = 10;
+                            item.MaxDropCount = 30;
+                            //OLogger.Log($" --> {item.MaxDropCount}", "ffffffff", "drop");
+                            lstIds.Add(item.DroppedItem.ItemID);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                OLogger.Log(ex.Message);
+            }
+        }
+    }
+
+    private void DeveloperToolManager_ctor(On.DeveloperToolManager.orig_ctor orig, DeveloperToolManager self)
+    {
+        OLogger.Log("DeveloperToolManager_ctor");
+    }
+
+    private void ForceRefreshInventory(On.MerchantPouch.orig_RefreshInventory orig, MerchantPouch self, Dropable _dropable)
+    {
+        try
+        {
+            FieldInfo f_nextRefreshTime = AccessTools.Field(typeof(MerchantPouch), "m_nextRefreshTime");
+            double nextRefreshTime = (double)f_nextRefreshTime.GetValue(self);
+            //OLogger.Log($"NextRefreshTime={nextRefreshTime}");
+            nextRefreshTime = EnvironmentConditions.GameTime - 1;
+            f_nextRefreshTime.SetValue(self, nextRefreshTime);
+        }
+        catch (Exception ex)
+        {
+            OLogger.Error("ForceRefreshInventory:" + ex.Message);
+        }
+
+        orig.Invoke(self, _dropable);
+    }
+
+    private bool AreaManager_IsAreaExpired(On.AreaManager.orig_IsAreaExpired orig, AreaManager self, string _areaName, float _diff)
+    {
+        Area areaFromSceneName = self.GetAreaFromSceneName(_areaName);
+        float _resetTime = areaFromSceneName.ResetTime == 168f ? 2f : areaFromSceneName.ResetTime;
+        OLogger.Log($"IsAreaExpired for {_areaName} - {_resetTime}");
+        if (areaFromSceneName != null && !self.PermenantAreas.Contains((AreaManager.AreaEnum)areaFromSceneName.ID) && 0f - _diff > _resetTime)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private void AreaManager_ctor(On.AreaManager.orig_ctor orig, AreaManager self)
+    {
+        orig.Invoke(self);
+        /*OLogger.Log($"AreaManager_ctor START: {self.DefaultAreaResetTime}");
+        self.DefaultAreaResetTime = 3f;
+        OLogger.Log($"AreaManager_ctor END: {self.DefaultAreaResetTime}");*/
+        /*try
+        {
+            OLogger.Log(AccessTools.GetDeclaredFields(typeof(MerchantPouch)).Count, "ffffffff", "reflection");
+            foreach (FieldInfo info in AccessTools.GetDeclaredFields(typeof(MerchantPouch)))
+            {
+                OLogger.Log($"Field {info.Name} of {info.FieldType.Name}", "ffffffff", "reflection");
+            }
+            OLogger.Log(AccessTools.GetDeclaredProperties(typeof(MerchantPouch)).Count, "ffffffff", "reflection");
+            foreach (PropertyInfo info in AccessTools.GetDeclaredProperties(typeof(MerchantPouch)))
+            {
+                OLogger.Log($"Property {info.Name} of {info.PropertyType.Name}", "ffffffff", "reflection");
+            }
+        }
+        catch (Exception ex)
+        {
+            OLogger.Error(ex.Message, "reflection");
+        }*/
+    }
+}

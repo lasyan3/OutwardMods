@@ -1,0 +1,20 @@
+E:\Downloads\Mods Outward\AreaRespawnMoreFrequently\bin\Debug\AreaRespawnMoreFrequently.dll
+E:\Downloads\Mods Outward\AreaRespawnMoreFrequently\bin\Debug\AreaRespawnMoreFrequently.pdb
+E:\Downloads\Mods Outward\AreaRespawnMoreFrequently\bin\Debug\0Harmony.dll
+E:\Downloads\Mods Outward\AreaRespawnMoreFrequently\bin\Debug\Assembly-CSharp-firstpass.dll
+E:\Downloads\Mods Outward\AreaRespawnMoreFrequently\bin\Debug\Assembly-CSharp.dll
+E:\Downloads\Mods Outward\AreaRespawnMoreFrequently\bin\Debug\MonoMod.exe
+E:\Downloads\Mods Outward\AreaRespawnMoreFrequently\bin\Debug\OLogger.dll
+E:\Downloads\Mods Outward\AreaRespawnMoreFrequently\bin\Debug\Partiality.dll
+E:\Downloads\Mods Outward\AreaRespawnMoreFrequently\bin\Debug\UnityEngine.dll
+E:\Downloads\Mods Outward\AreaRespawnMoreFrequently\obj\Debug\AreaRespawnMoreFrequently.csproj.CoreCompileInputs.cache
+E:\Downloads\Mods Outward\AreaRespawnMoreFrequently\obj\Debug\AreaRespawnMoreFrequently.csproj.CopyComplete
+E:\Downloads\Mods Outward\AreaRespawnMoreFrequently\obj\Debug\AreaRespawnMoreFrequently.dll
+E:\Downloads\Mods Outward\AreaRespawnMoreFrequently\obj\Debug\AreaRespawnMoreFrequently.pdb
+E:\Downloads\Mods Outward\AreaRespawnMoreFrequently\obj\Debug\AreaRespawnMoreFrequently.csprojAssemblyReference.cache
+E:\Downloads\Mods Outward\Outward Mod Projects\AreaRespawnMoreFrequently\obj\Debug\AreaRespawnMoreFrequently.dll
+E:\Downloads\Mods Outward\Outward Mod Projects\AreaRespawnMoreFrequently\obj\Debug\AreaRespawnMoreFrequently.pdb
+E:\Downloads\Mods Outward\Outward Mod Projects\AreaRespawnMoreFrequently\bin\Debug\AreaRespawnMoreFrequently.dll
+E:\Downloads\Mods Outward\Outward Mod Projects\AreaRespawnMoreFrequently\bin\Debug\AreaRespawnMoreFrequently.pdb
+E:\Downloads\Mods Outward\Outward Mod Projects\AreaRespawnMoreFrequently\obj\Debug\AreaRespawnMoreFrequently.csprojAssemblyReference.cache
+E:\Downloads\Mods Outward\Outward Mod Projects\AreaRespawnMoreFrequently\obj\Debug\AreaRespawnMoreFrequently.csproj.CoreCompileInputs.cache
