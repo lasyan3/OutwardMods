@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29209.62
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AreaRespawnMoreFrequently", "AreaRespawnMoreFrequently\AreaRespawnMoreFrequently.csproj", "{0CBE35E9-224D-4131-9ADC-63B2B941454B}"
 EndProject
@@ -10,6 +10,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoreGatherableLoot", "MoreGatherableLoot\MoreGatherableLoot.csproj", "{CAC32211-D092-4974-8BA4-83C8F2151D9D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoreMerchantStock", "MoreMerchantStock\MoreMerchantStock.csproj", "{F399EEEB-EAD8-43E6-9D95-3C0B7E12F355}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DisableDungeonsDefeatScenarios", "DisableDungeonsDefeatScenarios\DisableDungeonsDefeatScenarios.csproj", "{DBDBACED-2C7D-49EA-A68F-2E668750788E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wip", "Wip\Wip.csproj", "{F88DCFE5-655E-48A7-A41D-4A5D75B024DF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnRentStash", "InnRentStash\InnRentStash.csproj", "{9E2B0C25-97DC-4E5D-B7FF-ECB72B001E86}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +39,18 @@ Global
 		{F399EEEB-EAD8-43E6-9D95-3C0B7E12F355}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F399EEEB-EAD8-43E6-9D95-3C0B7E12F355}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F399EEEB-EAD8-43E6-9D95-3C0B7E12F355}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DBDBACED-2C7D-49EA-A68F-2E668750788E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DBDBACED-2C7D-49EA-A68F-2E668750788E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DBDBACED-2C7D-49EA-A68F-2E668750788E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DBDBACED-2C7D-49EA-A68F-2E668750788E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F88DCFE5-655E-48A7-A41D-4A5D75B024DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F88DCFE5-655E-48A7-A41D-4A5D75B024DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F88DCFE5-655E-48A7-A41D-4A5D75B024DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F88DCFE5-655E-48A7-A41D-4A5D75B024DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E2B0C25-97DC-4E5D-B7FF-ECB72B001E86}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E2B0C25-97DC-4E5D-B7FF-ECB72B001E86}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E2B0C25-97DC-4E5D-B7FF-ECB72B001E86}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E2B0C25-97DC-4E5D-B7FF-ECB72B001E86}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
