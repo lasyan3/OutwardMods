@@ -1,6 +1,0 @@
-E:\Downloads\Mods Outward\Outward Mod Projects\MoreGatherableLoot\bin\Debug\MoreGatherableLoot.dll
-E:\Downloads\Mods Outward\Outward Mod Projects\MoreGatherableLoot\bin\Debug\MoreGatherableLoot.pdb
-E:\Downloads\Mods Outward\Outward Mod Projects\MoreGatherableLoot\obj\Debug\MoreGatherableLoot.dll
-E:\Downloads\Mods Outward\Outward Mod Projects\MoreGatherableLoot\obj\Debug\MoreGatherableLoot.pdb
-E:\Downloads\Mods Outward\Outward Mod Projects\MoreGatherableLoot\obj\Debug\MoreGatherableLoot.csproj.CoreCompileInputs.cache
-E:\Downloads\Mods Outward\Outward Mod Projects\MoreGatherableLoot\obj\Debug\MoreGatherableLoot.csprojAssemblyReference.cache

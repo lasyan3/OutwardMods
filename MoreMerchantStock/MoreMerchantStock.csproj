@@ -23,41 +23,33 @@
     <OutputPath>bin\Release\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="MoreMerchantStock.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>..\..\Release\net35\0Harmony.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>D:\SteamLibrary\steamapps\common\Outward\Outward_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="MonoMod">
-      <HintPath>lib\MonoMod.exe</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="HOOKS-Assembly-CSharp">
-      <HintPath>D:\SteamLibrary\steamapps\common\Outward\Outward_Data\Managed\HOOKS-Assembly-CSharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="OLogger">
-      <HintPath>..\..\OLogger.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Partiality">
-      <HintPath>lib\Partiality.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath>D:\SteamLibrary\steamapps\common\Outward\Outward_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>..\Libraries\0Harmony.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>D:\SteamLibrary\steamapps\common\Outward\Outward_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>..\Libraries\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="MoreMerchantStock.cs" />
+    <Reference Include="HOOKS-Assembly-CSharp">
+      <HintPath>..\Libraries\HOOKS-Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="OLogger">
+      <HintPath>..\Libraries\OLogger.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Partiality">
+      <HintPath>..\Libraries\Partiality.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>..\Libraries\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

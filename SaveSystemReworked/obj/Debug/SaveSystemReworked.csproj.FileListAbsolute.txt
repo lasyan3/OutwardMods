@@ -1,6 +1,0 @@
-E:\Downloads\Mods Outward\Outward Mod Projects\SaveSystemReworked\bin\Debug\SaveSystemReworked.dll
-E:\Downloads\Mods Outward\Outward Mod Projects\SaveSystemReworked\bin\Debug\SaveSystemReworked.pdb
-E:\Downloads\Mods Outward\Outward Mod Projects\SaveSystemReworked\obj\Debug\SaveSystemReworked.dll
-E:\Downloads\Mods Outward\Outward Mod Projects\SaveSystemReworked\obj\Debug\SaveSystemReworked.pdb
-E:\Downloads\Mods Outward\Outward Mod Projects\SaveSystemReworked\obj\Debug\SaveSystemReworked.csprojAssemblyReference.cache
-E:\Downloads\Mods Outward\Outward Mod Projects\SaveSystemReworked\obj\Debug\SaveSystemReworked.csproj.CoreCompileInputs.cache
