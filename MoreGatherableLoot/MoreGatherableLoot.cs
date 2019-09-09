@@ -1,10 +1,6 @@
-﻿using ODebug;
-using Partiality.Modloader;
+﻿using Partiality.Modloader;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using UnityEngine;
 
 namespace MoreGatherableLoot
@@ -12,7 +8,7 @@ namespace MoreGatherableLoot
     class GameData
     {
         public int Amount;
-        public bool AffectMinimum;
+        public bool AlwaysMax;
     }
 
     public class MoreGatherableLoot : PartialityMod
@@ -64,11 +60,11 @@ namespace MoreGatherableLoot
                 //_itemDrop.DroppedItem.InitCachedInfos();
                 if (_container.GetType() == typeof(Gatherable) && _itemDrop.MaxDropCount < data.Amount)
                 {
-                    int minDrop = _itemDrop.MinDropCount * (data.AffectMinimum ? data.Amount : 1);
+                    int minDrop = _itemDrop.MinDropCount * (data.AlwaysMax ? data.Amount : 1);
                     int maxDrop = _itemDrop.MaxDropCount * data.Amount;
                     if (_itemDrop.MaxDropCount > 1 && _itemDrop.MaxDropCount < data.Amount)
                     { // If already multiple quantities, increase instead of multiply
-                        minDrop = data.AffectMinimum ? data.Amount : _itemDrop.MinDropCount;
+                        minDrop = data.AlwaysMax ? data.Amount : _itemDrop.MinDropCount;
                         maxDrop = data.Amount;
                     }
                     // Increase count of items on specific resources (like champignons !)
