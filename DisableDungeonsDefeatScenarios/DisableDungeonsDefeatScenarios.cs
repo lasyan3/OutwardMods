@@ -49,11 +49,33 @@ public class DisableDungeonsDefeatScenarios : PartialityMod
         {
             On.DefeatScenariosManager.ActivateDefeatScenario += DefeatScenariosManager_ActivateDefeatScenario;
 
+            On.CharacterManager.LoadAiCharactersFromSave += CharacterManager_LoadAiCharactersFromSave; // Restore stats and remove debuffs from alive enemies
+
             //OLogger.Log("DisableDungeonsDefeatScenarios is enabled");
         }
         catch (Exception ex)
         {
             Debug.Log($"[{_modName}] Init: {ex.Message}");
+        }
+    }
+
+    private void CharacterManager_LoadAiCharactersFromSave(On.CharacterManager.orig_LoadAiCharactersFromSave orig, CharacterManager self, CharacterSaveData[] _saves)
+    {
+        orig(self, _saves);
+        if (self.PlayerCharacters.Count == 0) return;
+        Character player = self.Characters[CharacterManager.Instance.PlayerCharacters.Values[0]];
+        //OLogger.Log($"Engaged={ player.EngagedCharacters.Count}");
+        for (int i = 0; i < self.Characters.Count; i++)
+        {
+            Character character = self.Characters.Values[i];
+            //OLogger.Log($"AddChar={_char.Name} {_char.IsAlly(player)} {_char.IsDead}");
+            if (!character.IsLocalPlayer && !character.IsAlly(player) && !character.IsDead)
+            {
+                //OLogger.Log($"Reset={character.Name} ({character.Health}/{character.Stats.MaxHealth})");
+                character.ResetStats();
+                character.StatusEffectMngr.RemoveShortStatuses(); // Remove debuffs
+            }
+
         }
     }
 
@@ -66,7 +88,9 @@ public class DisableDungeonsDefeatScenarios : PartialityMod
             if (areaN != AreaManager.AreaEnum.CierzoOutside &&
                areaN != AreaManager.AreaEnum.Abrassar &&
                areaN != AreaManager.AreaEnum.Emercar &&
-               areaN != AreaManager.AreaEnum.HallowedMarsh)
+               areaN != AreaManager.AreaEnum.HallowedMarsh &&
+               areaN != AreaManager.AreaEnum.Tutorial &&
+               areaN != AreaManager.AreaEnum.CierzoDungeon)
             {
                 //OLogger.Log($"FailSafeDefeat!");
                 SendNotificationToAllPlayers($"{SceneManagerHelper.ActiveSceneName}");
@@ -78,8 +102,10 @@ public class DisableDungeonsDefeatScenarios : PartialityMod
                     character.StatusEffectMngr.Purge();
                     character.Stats.RefreshVitalMaxStat();
                     PlayerSaveData playerSaveData = new PlayerSaveData(character);
+                    playerSaveData.BurntHealth += character.Stats.MaxHealth * 0.10f; // Reduce burnt health by 10%
                     playerSaveData.BurntHealth = Mathf.Clamp(playerSaveData.BurntHealth, 0f, character.Stats.MaxHealth * 0.9f);
                     playerSaveData.Health = character.Stats.MaxHealth;// Mathf.Clamp(playerSaveData.Health, character.Stats.MaxHealth * 0.1f, character.Stats.MaxHealth);
+                    playerSaveData.BurntStamina += character.Stats.MaxStamina * 0.10f; // Reduce burnt stamina by 10%
                     playerSaveData.BurntStamina = Mathf.Clamp(playerSaveData.BurntStamina, 0f, character.Stats.MaxStamina * 0.9f);
                     playerSaveData.Stamina = character.Stats.MaxStamina; // Mathf.Clamp(playerSaveData.Stamina, character.Stats.MaxStamina * 0.1f, character.Stats.MaxStamina);
                     playerSaveData.BurntMana = Mathf.Clamp(playerSaveData.BurntMana, 0f, character.Stats.MaxMana * 0.9f);
