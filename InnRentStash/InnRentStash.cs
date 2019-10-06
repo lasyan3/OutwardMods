@@ -1,4 +1,5 @@
 ﻿using Harmony;
+using InnRentStash;
 using NodeCanvas.DialogueTrees;
 using NodeCanvas.Framework;
 using NodeCanvas.Tasks.Conditions;
@@ -11,7 +12,7 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace MoreGatherableLoot
+namespace InnRentStash
 {
     public class StrRent
     {
@@ -36,10 +37,10 @@ namespace MoreGatherableLoot
                 "Berg",
                 "ImqRiGAT80aE2WtUHfdcMw"
             },
-            /*{
+            {
                 "CierzoNewTerrain",
                 "ImqRiGAT80aE2WtUHfdcMw"
-            },*/
+            },
             {
                 "Levant",
                 "ZbPXNsPvlUeQVJRks3zBzg"
@@ -143,9 +144,6 @@ namespace MoreGatherableLoot
 
                 On.RecipeDisplay.SetReferencedRecipe += RecipeDisplay_SetReferencedRecipe; // Show quantity of owned objects in recipes' name
 
-                On.ItemDetailsDisplay.RefreshDisplay += ItemDetailsDisplay_RefreshDisplay; // Add ratio information
-
-                //On.ItemListDisplay.SortBy += ItemListDisplay_SortBy; // Sort items by value/weight ratio
             }
             catch (Exception ex)
             {
@@ -154,50 +152,6 @@ namespace MoreGatherableLoot
             }
         }
 
-        private int ItemListDisplay_SortByRatio(ItemDisplay _item1, ItemDisplay _item2)
-        {
-            if (_item1.isActiveAndEnabled && _item2.isActiveAndEnabled)
-            {
-                float r1 = _item1.RefItem.Value / _item1.RefItem.Weight;
-                float r2 = _item2.RefItem.Value / _item2.RefItem.Weight;
-                return r2.CompareTo(r1);
-                /*f (num != 0)
-                {
-                    return num;
-                }
-                return orig(_item1, _item2);*/
-            }
-            return _item1.isActiveAndEnabled.CompareTo(_item2.isActiveAndEnabled);
-        }
-
-        private void ItemListDisplay_SortBy(On.ItemListDisplay.orig_SortBy orig, ItemListDisplay self, ItemListDisplay.SortingType _type)
-        {
-            try
-            {
-                if (self.LocalCharacter.IsLocalPlayer && self.CharacterUI.IsInventoryPanelDisplayed && self.ContainerName != "EquipmentDisplay")
-                {
-                    //OLogger.Log($"sort={self.ContainerName}");
-                    
-                    List<ItemDisplay> m_assignedDisplays = (List<ItemDisplay>)AccessTools.Field(typeof(ItemListDisplay), "m_assignedDisplays").GetValue(self);
-                    m_assignedDisplays.Sort(ItemListDisplay_SortByRatio);
-                    for (int i = 0; i < m_assignedDisplays.Count; i++)
-                    {
-                        m_assignedDisplays[i].transform.SetSiblingIndex(i);
-                    }
-                    AccessTools.Method(typeof(ItemListDisplay), "ForceRefreshDisplay").Invoke(self, null);
-                }
-                else
-                {
-                    orig(self, _type);
-                }
-            }
-            catch (Exception ex)
-            {
-                orig(self, _type);
-                DoOloggerError(ex.Message);
-                Debug.Log($"[{m_modName}] OnEnable: {ex.Message}");
-            }
-        }
 
         private void ItemDisplay_UpdateQuantityDisplay(On.ItemDisplay.orig_UpdateQuantityDisplay orig, ItemDisplay self)
         {
@@ -238,12 +192,6 @@ namespace MoreGatherableLoot
                 Debug.Log($"[{m_modName}] OnEnable: {ex.Message}");
             }
             orig(self);
-        }
-
-        private void RecipeResultDisplay_SetRecipeResult(On.RecipeResultDisplay.orig_SetRecipeResult orig, RecipeResultDisplay self, ItemQuantity _result)
-        {
-            //_result.Quantity = 1;
-            orig(self, _result);
         }
 
         private void CraftingMenu_OnRecipeSelected(On.CraftingMenu.orig_OnRecipeSelected orig, CraftingMenu self, int _index, bool _forceRefresh)
@@ -295,40 +243,6 @@ namespace MoreGatherableLoot
             {
                 DoOloggerError($"CraftingMenu_GetPlayersOwnItems_1: {ex.Message}");
                 Debug.Log($"[{m_modName}] CraftingMenu_GetPlayersOwnItems_1: {ex.Message}");
-            }
-        }
-
-        private void ItemDetailsDisplay_RefreshDisplay(On.ItemDetailsDisplay.orig_RefreshDisplay orig, ItemDetailsDisplay self, IItemDisplay _itemDisplay)
-        {
-            orig(self, _itemDisplay);
-            try
-            {
-                Text m_lblItemName = (Text)AccessTools.Field(typeof(ItemDetailsDisplay), "m_lblItemName").GetValue(self);
-                //Item it = (Item)AccessTools.Field(typeof(ItemDetailsDisplay), "m_lastItem").GetValue(self);
-                if (m_lblItemName != null && _itemDisplay != null && _itemDisplay.RefItem != null &&
-                    _itemDisplay.RefItem.Value > 0 && _itemDisplay.RefItem.Weight > 0)
-                {
-                    //OLogger.Log(m_lblItemName.text);
-                    /*int invQty = self.LocalCharacter.Inventory.GetOwnedItems(_itemDisplay.RefItem.ItemID).Count;
-                    int stashQty = 0;
-                    if (StashAreaToStashUID.ContainsKey(m_currentArea))
-                    {
-                        TreasureChest stash = (TreasureChest)ItemManager.Instance.GetItem(StashAreaToStashUID[m_currentArea]);
-                        if (stash != null)
-                        {
-                            stashQty = stash.GetItemsFromID(_itemDisplay.RefItem.ItemID).Count;
-                        }
-                    }
-                    m_lblItemName.text += $" ({invQty + stashQty})";*/
-                    List<ItemDetailRowDisplay> m_detailRows = (List<ItemDetailRowDisplay>)AccessTools.Field(typeof(ItemDetailsDisplay), "m_detailRows").GetValue(self);
-                    ItemDetailRowDisplay row = (ItemDetailRowDisplay)AccessTools.Method(typeof(ItemDetailsDisplay), "GetRow").Invoke(self, new object[] { m_detailRows.Count });
-                    row.SetInfo("Ratio (v/w)", Math.Round(_itemDisplay.RefItem.Value / _itemDisplay.RefItem.Weight, 2).ToString());
-                    //m_lblItemName.text += $" ({_itemDisplay.RefItem.Value}/{_itemDisplay.RefItem.Weight} = {_itemDisplay.RefItem.Value/_itemDisplay.RefItem.Weight})"; 
-                }
-            }
-            catch (Exception ex)
-            {
-                DoOloggerError(ex.Message);
             }
         }
 
@@ -498,6 +412,11 @@ namespace MoreGatherableLoot
                 var nodes = typeof(Graph).GetField("_nodes", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(graph as Graph) as List<Node>;
                 var firstNode = nodes.First(n => n.GetType().Name == "MultipleChoiceNodeExt");
 
+                //TreeNode<Node>.DebugDialogue(nodes[0], 0);
+                /* Un dialogue c'est: afficher un texte + action(optionnel) + choix(optionnel)
+                 * 
+                 * Outil de conversion Graph --> ma structure
+                 */
                 (firstNode as MultipleChoiceNodeExt).availableChoices.Insert(1, new MultipleChoiceNodeExt.Choice(new Statement("I want to rent a stash, please.")));
                 StatementNodeExt nStart = graph.AddNode<StatementNodeExt>();
                 nStart.statement = new Statement($"Of course! Renting a stash costs only {StashAreaToQuestEvent[m_currentArea].RentPrice} silver for one week.");
@@ -687,10 +606,7 @@ namespace MoreGatherableLoot
                 //ItemVisual iv2 = ItemManager.GetVisuals(m_currentStash);
                 Transform transform = UnityEngine.Object.Instantiate(m_currentStash.VisualPrefab);
                 ItemVisual iv2 = transform.GetComponent<ItemVisual>();
-                if ((bool)iv2)
-                {
-                    iv2.ItemID = m_currentStash.ItemID;
-                }
+                iv2.ItemID = m_currentStash.ItemID;
                 DoOloggerLog($"Item {m_currentStash.UID}={(m_currentStash as ItemContainer).ItemCount}");
                 iv2.transform.SetPositionAndRotation(newPos, newRot);
                 m_currentStash.OnContainerChangedOwner(character);
