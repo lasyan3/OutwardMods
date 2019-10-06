@@ -15,7 +15,7 @@ namespace MoreGatherableLoot
     public class WorkInProgress : PartialityMod
     {
         private readonly string _modName = "WorkInProgress";
-        private readonly int NewSkillArmorExpertID = 8205221;
+        private const int NewSkillArmorExpertID = 8205221;
 
         public WorkInProgress()
         {
@@ -93,12 +93,10 @@ namespace MoreGatherableLoot
             #region Skills tests
             On.CharacterEquipment.GetTotalMovementModifier += CharacterEquipment_GetTotalMovementModifier; // Update skill value
             On.ItemDetailsDisplay.RefreshDetail += ItemDetailsDisplay_RefreshDetail; // Update display with Passive skills modificators
-                                                                                     //On.ResourcesPrefabManager.LoadItemPrefabs += ResourcesPrefabManager_LoadItemPrefabs;
             On.ResourcesPrefabManager.GenerateItem += ResourcesPrefabManager_GenerateItem;
-            On.SkillTreeDisplay.RefreshTree += SkillTreeDisplay_RefreshTree;
             On.LocalizationManager.GetItemName += LocalizationManager_GetItemName;
             On.LocalizationManager.GetItemDesc += LocalizationManager_GetItemDesc;
-            //On.CharacterInventory.TryUnlockSkill += CharacterInventory_TryUnlockSkill;*/
+            On.Trainer.GetSkillTree += Trainer_GetSkillTree;
             #endregion
 
             //On.NetworkLevelLoader.UnPauseGameplay += NetworkLevelLoader_UnPauseGameplay;
@@ -151,141 +149,39 @@ namespace MoreGatherableLoot
 
         private Item ResourcesPrefabManager_GenerateItem(On.ResourcesPrefabManager.orig_GenerateItem orig, ResourcesPrefabManager self, string _itemIDString)
         {
-            if (_itemIDString == NewSkillArmorExpertID.ToString())
-            {
-                Dictionary<string, Item> ITEM_PREFABS = (Dictionary<string, Item>)AccessTools.Field(typeof(ResourcesPrefabManager), "ITEM_PREFABS").GetValue(self);
-                if (!ITEM_PREFABS.ContainsKey(_itemIDString))
-                {
-                    Debug.LogError("Invalid ItemID " + _itemIDString);
-                    return null;
-                }
-                Item item = ITEM_PREFABS["8205220"];
-                try
-                {
-                    item = UnityEngine.Object.Instantiate(item);
-                    if (!(bool)item)
-                    {
-                        return item;
-                    }
-                    item.ItemID = NewSkillArmorExpertID;
-                    item.name = NewSkillArmorExpertID.ToString() + "_ArmorExpert";
-                    item.gameObject.SetActive(value: true);
-                    return item;
-                }
-                catch (Exception message)
-                {
-                    Debug.LogError(message);
-                    return item;
-                }
-            }
-            else
-            {
-                return orig(self, _itemIDString);
-            }
-        }
-        private void SkillTreeDisplay_RefreshTree(On.SkillTreeDisplay.orig_RefreshTree orig, SkillTreeDisplay self, SkillSchool _tree)
-        {
             try
             {
-                /* Replace existing skill --> OK
-                  * Add existing skill --> OK
-                  * Add new skill --> 
-                  */
-                List<SkillBranch> lstBranchs = (List<SkillBranch>)AccessTools.Field(typeof(SkillSchool), "m_branches").GetValue(_tree);
-                /* Faut créer un SkillSlot mais aussi un SkillSlotDisplay ?!
-                 * SkillTreeDisplay
-                 *  |- SkillTreeSlotDisplay
-                 *  
-                 *  SkillSlotDisplay ?
-                 */
-
-                // Replace existing skill
-                //Skill skReplace = (Skill)ResourcesPrefabManager.Instance.GetItemPrefab(8205190);
-                //AccessTools.Field(typeof(SkillSlot), "m_skill").SetValue(_tree.SkillSlots[1], skReplace);
-
-                // Add existing skill
-                /*Skill skAdd = (Skill)ResourcesPrefabManager.Instance.GetItemPrefab(8205190);
-                SkillSlot slotAdd = UnityEngine.Object.Instantiate((SkillSlot)_tree.SkillSlots[0]);
-                AccessTools.Field(typeof(SkillSlot), "m_columnIndex").SetValue(slotAdd, 2);
-                slotAdd.ParentBranch = lstBranchs.First(b => b.name == "Row2");
-                slotAdd.RequiredSkillSlot = _tree.SkillSlots[2];
-                AccessTools.Field(typeof(SkillSlot), "m_requiredAffiliatedFaction").SetValue(slotAdd, Character.StoryFactions.None);
-                AccessTools.Field(typeof(SkillSlot), "m_skill").SetValue(slotAdd, skAdd);
-                AccessTools.Field(typeof(SkillSlot), "m_requiredMoney").SetValue(slotAdd, 50);
-                _tree.SkillSlots.Add(slotAdd);
-                slotAdd.ParentBranch.SkillSlots.Add(slotAdd);//*/
-
-                // Add new skill
-                //8205221: Expertise en armures
-                //8205222: Maitrise en armures
-                /*Skill t = (Skill)ResourcesPrefabManager.Instance.GetItemPrefab(8205190);
-                //Skill t = UnityEngine.Object.Instantiate((_tree.SkillSlots[0] as SkillSlot).Skill);
-                t.ItemID = 8205220; // Ok "Formation en armures" + details
-                //t.ItemID = 8205221; //
-                //AccessTools.Field(typeof(Skill), "m_itemIcon").SetValue(t, ResourcesPrefabManager.Instance.GetItemIcon(8205220)); // OK
-                t.SkillTreeIcon = ResourcesPrefabManager.Instance.GetItemIcon(8205220);
-                //Item t = UnityEngine.Object.Instantiate((_tree.SkillSlots[0] as SkillSlot).Skill);
-                //t.ItemID = 8205220; // Ok "Formation en armures" + details
-                //t.ItemID = 8205221; //
-                Item t = UnityEngine.Object.Instantiate((_tree.SkillSlots[0] as SkillSlot).Skill);
-                t.ItemID = 8205220;*/
-                //t.ItemIcon = ResourcesPrefabManager.Instance.GetItemIcon(8205220);
-                Skill skNew = (Skill)ResourcesPrefabManager.Instance.GenerateItem("8205221");
-                //skNew.ItemID = 8205221;
-                //skNew.name = "8205221_ArmorExpert";
-                SkillSlot slotNew = UnityEngine.Object.Instantiate((SkillSlot)_tree.SkillSlots[0]);
-                AccessTools.Field(typeof(SkillSlot), "m_columnIndex").SetValue(slotNew, 1);
-                slotNew.ParentBranch = lstBranchs.First(b => b.name == "Row2");
-                slotNew.RequiredSkillSlot = _tree.SkillSlots[0];
-                AccessTools.Field(typeof(SkillSlot), "m_requiredAffiliatedFaction").SetValue(slotNew, Character.StoryFactions.None);
-                AccessTools.Field(typeof(SkillSlot), "m_skill").SetValue(slotNew, skNew);
-                AccessTools.Field(typeof(SkillSlot), "m_requiredMoney").SetValue(slotNew, 500);
-                _tree.SkillSlots.Add(slotNew);
-                slotNew.ParentBranch.SkillSlots.Add(slotNew);//*/
-
-                //foreach (var branch in lstBranchs)
-                //{
-                //OLogger.Log($"{branch.Index}: {branch.name} ({branch.SkillSlots.Count})");
-                //foreach (var slot in branch.SkillSlots)
-                /*foreach (var slot in _tree.SkillSlots)
+                if (_itemIDString == NewSkillArmorExpertID.ToString())
                 {
-                        OLogger.Log($"{slot.GetType().Name}");
-                        if (slot is SkillSlot)
-                        {
-                            SkillSlot ss = slot as SkillSlot;
-                        if (ss.Skill != null) OLogger.Log($" |-   Skill: {ss.Skill.DisplayName}");
-                            OLogger.Log($" |-   ColIdx: {ss.ColumnIndex}");
-                            OLogger.Log($" |-   IsBreakthrough: {ss.IsBreakthrough}");
-                            OLogger.Log($" |-   RequiresBreakthrough: {ss.RequiresBreakthrough}");
-                            OLogger.Log($" |-   RequiredFaction: {ss.RequiredFaction}");
-                            OLogger.Log($" |-   RequiredMoney: {ss.RequiredMoney}");
-                            if (ss.ParentBranch != null) OLogger.Log($" |-   ParentBranch: {ss.ParentBranch.Index}");
-                            if (ss.RequiredSkillSlot != null) OLogger.Log($" |-   Req: {ss.RequiredSkillSlot}");
-                            if (ss.SiblingSlot != null) OLogger.Log($" |-   Sibling: {ss.SiblingSlot}");
-                        }
-                        else
-                        {
-                            //OLogger.Log($" |- {slot.GetType().Name}");
-                        }
-                }
-                OLogger.Log($"SchoolSkillSlotsCount={_tree.SkillSlots.Count}");
-                int m_activeSlotCount = (int)AccessTools.Field(typeof(SkillTreeDisplay), "m_activeSlotCount").GetValue(self);
-                OLogger.Log($"m_activeSlotCount={m_activeSlotCount}");
-                OLogger.Log("-----");
-                for (int i = 0; i < _tree.SkillSlots.Count; i++)
-                {
-                    OLogger.Log($"{i}: {_tree.SkillSlots[i]}");
-                    if (!(bool)_tree.SkillSlots[i])
+                    Dictionary<string, Item> ITEM_PREFABS = (Dictionary<string, Item>)AccessTools.Field(typeof(ResourcesPrefabManager), "ITEM_PREFABS").GetValue(self);
+                    /*if (!ITEM_PREFABS.ContainsKey(_itemIDString))
                     {
-                        OLogger.Log($"Skip {i}");
-                        continue;
+                        Debug.LogError("Invalid ItemID " + _itemIDString);
+                        return null;
+                    }*/
+                    Item item = ITEM_PREFABS["8205220"];
+                    try
+                    {
+                        item = UnityEngine.Object.Instantiate(item);
+                        if (!(bool)item)
+                        {
+                            return item;
+                        }
+                        item.ItemID = NewSkillArmorExpertID;
+                        item.name = NewSkillArmorExpertID.ToString() + "_ArmorExpert";
+                        item.gameObject.SetActive(value: true);
+                        return item;
                     }
-                    if (_tree.SkillSlots[i].ParentBranch.Index != -1)
+                    catch (Exception message)
                     {
-                        m_activeSlotCount++;
+                        Debug.LogError(message);
+                        return item;
                     }
                 }
-                OLogger.Log($"m_activeSlotCount={m_activeSlotCount}");//*/
+                else
+                {
+                    return orig(self, _itemIDString);
+                }
             }
             catch (Exception ex)
             {
@@ -293,23 +189,71 @@ namespace MoreGatherableLoot
                 //Debug.Log($"[{m_modName}] SkillTreeDisplay_RefreshTree: {ex.Message}");
                 OLogger.Error(ex.Message);
             }
-            orig(self, _tree);
+            return orig(self, _itemIDString);
+        }
+        private SkillSchool Trainer_GetSkillTree(On.Trainer.orig_GetSkillTree orig, Trainer self)
+        {
+            SkillSchool _tree = orig(self);
+            if (_tree == null) return null;
+
+            //OLogger.Log($"SkillSchool={_tree.name}");
+            List<SkillBranch> lstBranchs = (List<SkillBranch>)AccessTools.Field(typeof(SkillSchool), "m_branches").GetValue(_tree);
+
+            /*for (int i = 0; i < _tree.SkillSlots.Count; i++)
+            {
+                BaseSkillSlot slot = _tree.SkillSlots[i];
+                OLogger.Log($"{i}: {slot.GetType().Name}");
+                if (slot is SkillSlot)
+                {
+                    SkillSlot ss = slot as SkillSlot;
+                    if (ss.Skill != null) OLogger.Log($" |-   Skill: {ss.Skill.DisplayName}");
+                    OLogger.Log($" |-   ColIdx: {ss.ColumnIndex}");
+                    if (ss.ParentBranch != null) OLogger.Log($" |-   ParentBranch: {ss.ParentBranch.Index}");
+                    //if (ss.RequiredSkillSlot != null) OLogger.Log($" |-   Req: {ss.RequiredSkillSlot}");
+                    //if (ss.SiblingSlot != null) OLogger.Log($" |-   Sibling: {ss.SiblingSlot}");
+                }
+                else
+                {
+                    //OLogger.Log($" |- {slot.GetType().Name}");
+                }
+            }//*/
+
+            // Add new skill
+            if (_tree.name == "AbrassarMercenary")
+            {
+                Skill skNew = (Skill)ResourcesPrefabManager.Instance.GenerateItem(NewSkillArmorExpertID.ToString());
+                SkillSlot slotNew = UnityEngine.Object.Instantiate((SkillSlot)_tree.SkillSlots[3]);
+                AccessTools.Field(typeof(SkillSlot), "m_columnIndex").SetValue(slotNew, 3);
+                slotNew.ParentBranch = lstBranchs.First(b => b.name == "Row3");
+                slotNew.RequiredSkillSlot = _tree.SkillSlots[3];
+                AccessTools.Field(typeof(SkillSlot), "m_requiredAffiliatedFaction").SetValue(slotNew, Character.StoryFactions.None);
+                AccessTools.Field(typeof(SkillSlot), "m_skill").SetValue(slotNew, skNew);
+                AccessTools.Field(typeof(SkillSlot), "m_requiredMoney").SetValue(slotNew, 1500);
+                _tree.SkillSlots.Add(slotNew);
+                slotNew.ParentBranch.SkillSlots.Add(slotNew);
+            }
+
+            return _tree;
         }
         private string LocalizationManager_GetItemDesc(On.LocalizationManager.orig_GetItemDesc orig, LocalizationManager self, int _itemID)
         {
-            if (_itemID == NewSkillArmorExpertID)
+            switch (_itemID)
             {
-                return "Removes the stamina and movement penalties from wearing armor.";
+                case NewSkillArmorExpertID:
+                    return "Removes the stamina and movement penalties from wearing armor.";
+                default:
+                    return orig(self, _itemID);
             }
-            return orig(self, _itemID);
         }
         private string LocalizationManager_GetItemName(On.LocalizationManager.orig_GetItemName orig, LocalizationManager self, int _itemID)
         {
-            if (_itemID == NewSkillArmorExpertID)
+            switch (_itemID)
             {
-                return "Armor Mastering";
+                case NewSkillArmorExpertID:
+                    return "Armor Mastering";
+                default:
+                    return orig(self, _itemID);
             }
-            return orig(self, _itemID);
         }
         private bool ItemDetailsDisplay_RefreshDetail(On.ItemDetailsDisplay.orig_RefreshDetail orig, ItemDetailsDisplay self, int _rowIndex, ItemDetailsDisplay.DisplayedInfos _infoType)
         {
@@ -317,14 +261,21 @@ namespace MoreGatherableLoot
             {
                 string locItemStat = "";
                 float alteredPenalty = 0f;
-                bool flag = self.LocalCharacter.Inventory.SkillKnowledge.IsItemLearned(8205221);
+                bool flag = self.LocalCharacter.Inventory.SkillKnowledge.IsItemLearned(8205220);
+                bool flag2 = self.LocalCharacter.Inventory.SkillKnowledge.IsItemLearned(NewSkillArmorExpertID);
                 Equipment cachedEquip = (Equipment)AccessTools.Field(typeof(ItemDetailsDisplay), "cachedEquipment").GetValue(self);
                 if (_infoType == ItemDetailsDisplay.DisplayedInfos.MovementPenalty /*&& self.LocalCharacter != null && self.LocalCharacter.IsLocalPlayer*/)
                 {
-                    if (cachedEquip.MovementPenalty > 0f && flag)
+                    if (cachedEquip.MovementPenalty > 0f)
                     {
-                        //OLogger.Log($"MovementPenalty={cachedEquip.MovementPenalty} --> 0");
-                        alteredPenalty = 0f; // cachedEquip.MovementPenalty * 0.25f;
+                        if (flag)
+                        {
+                            alteredPenalty = cachedEquip.MovementPenalty * 0.5f;
+                        }
+                        if (flag2)
+                        {
+                            alteredPenalty = 0f;
+                        }
                         locItemStat = "ItemStat_MovementPenalty";
                     }
                 }
@@ -332,7 +283,14 @@ namespace MoreGatherableLoot
                 {
                     if (cachedEquip.StaminaUsePenalty > 0f && flag)
                     {
-                        alteredPenalty = 0f; // cachedEquip.StaminaUsePenalty * 0.25f;
+                        if (flag)
+                        {
+                            alteredPenalty = cachedEquip.StaminaUsePenalty * 0.5f;
+                        }
+                        if (flag2)
+                        {
+                            alteredPenalty = 0f;
+                        }
                         locItemStat = "ItemStat_StaminaUsePenalty";
                     }
                 }
@@ -340,7 +298,14 @@ namespace MoreGatherableLoot
                 {
                     if (cachedEquip.StaminaUsePenalty > 0f && flag)
                     {
-                        alteredPenalty = 0f; // cachedEquip.HeatRegenPenalty * 0.25f;
+                        if (flag)
+                        {
+                            alteredPenalty = cachedEquip.HeatRegenPenalty * 0.5f;
+                        }
+                        if (flag2)
+                        {
+                            alteredPenalty = 0f;
+                        }
                         locItemStat = "ItemStat_HeatRegenPenalty";
                     }
                 }
@@ -370,7 +335,8 @@ namespace MoreGatherableLoot
         {
             float num = 0f;
             Character m_character = (Character)AccessTools.Field(typeof(CharacterEquipment), "m_character").GetValue(self);
-            bool flag = m_character.Inventory.SkillKnowledge.IsItemLearned(8205221);
+            bool flag = m_character.Inventory.SkillKnowledge.IsItemLearned(8205220);
+            bool flag2 = m_character.Inventory.SkillKnowledge.IsItemLearned(NewSkillArmorExpertID);
             for (int i = 0; i < self.EquipmentSlots.Length; i++)
             {
                 if (!self.HasItemEquipped(i) || (self.EquipmentSlots[i].SlotType == EquipmentSlot.EquipmentSlotIDs.LeftHand && self.EquipmentSlots[i].EquippedItem.TwoHanded))
@@ -378,95 +344,22 @@ namespace MoreGatherableLoot
                     continue;
                 }
                 float num2 = self.EquipmentSlots[i].EquippedItem.MovementPenalty;
-                //OLogger.Log($"MovementPenalty[{i}]={num2}");
                 if (num2 > 0f)
                 {
                     num2 *= m_character.Stats.EquipmentPenaltyModifier;
                     if (flag)
                     {
+                        num2 *= 0.5f;
+                    }
+                    if (flag2)
+                    {
                         num2 = 0f; //*= 0.25f;
                     }
                 }
-                //OLogger.Log($" > {num2}");
                 num += num2 * 0.01f;
             }
             //OLogger.Log($"GetTotalMovementModifier={num}");
             return num;
-        }
-
-        private void ResourcesPrefabManager_LoadItemPrefabs(On.ResourcesPrefabManager.orig_LoadItemPrefabs orig, ResourcesPrefabManager self)
-        {
-            orig(self);
-            try
-            {
-                OLogger.Log("LoadItemPrefabs");
-                //List<Skill> lstSkills = ResourcesPrefabManager.Instance.EDITOR_GetPlayerSkillPrefabs();
-                //Skill armor = lstSkills.First(s => s.ItemID == 8205220);
-                Item go = self.GetItemPrefab(8205220);
-                OLogger.Log($"layer={go.gameObject.layer}"); // 
-                OLogger.Log($"name={go.gameObject.name}"); // 
-                OLogger.Log($"tag={go.gameObject.tag}"); // 
-                OLogger.Log($"IsActive={go.gameObject.GetActive()}"); // 
-                Component[] lstComp = go.gameObject.GetComponents<Component>();
-                OLogger.Log($"lstComp={lstComp.Length}"); // 
-                foreach (Component item in lstComp)
-                {
-                    OLogger.Log($"{item.name}");
-                }
-
-                /*Dictionary<string, Item> ITEM_PREFABS = (Dictionary<string, Item>)AccessTools.Field(typeof(ResourcesPrefabManager), "ITEM_PREFABS").GetValue(ResourcesPrefabManager.Instance);
-                PassiveSkill newSkill = (PassiveSkill)ResourcesPrefabManager.Instance.GenerateItem("8205220");
-                newSkill.ItemID = 8205221;
-                newSkill.name = "8205221_ArmorExpert";
-                newSkill.UID = "8205221_ArmorExpert_test";
-                //newSkill.transform.name = "8205221_ArmorExpert";
-                ITEM_PREFABS.Add(newSkill.ItemID.ToString(), newSkill);*/
-
-                OLogger.Log($"8205220={ResourcesPrefabManager.Instance.EDITOR_GetPlayerSkillPrefabs().Count(s => s.ItemID == 8205220)}");
-                OLogger.Log($"8205221={ResourcesPrefabManager.Instance.EDITOR_GetPlayerSkillPrefabs().Count(s => s.ItemID == 8205221)}");
-
-                Item test = ResourcesPrefabManager.Instance.GenerateItem("8205221");
-                //Transform transform = UnityEngine.Object.Instantiate(m_currentStash.VisualPrefab);
-                //ItemVisual iv2 = transform.GetComponent<ItemVisual>();
-
-
-                //armor = (PassiveSkill)lstSkills.First(s => s.ItemID == 8205220);
-                // create GameObject in AllPrefabs
-                // gameobject with Item component (Skill)
-                // Item has: ItemId, SaveType.Savable
-                /*PassiveSkill newSkill = UnityEngine.Object.Instantiate(armor);
-                newSkill.ItemID = 8205221;
-                //AccessTools.Field(typeof(Item), "m_localizedDescription").SetValue(newSkill, "coucou");
-                Dictionary<string, Item> ITEM_PREFABS = (Dictionary<string, Item>)AccessTools.Field(typeof(ResourcesPrefabManager), "ITEM_PREFABS").GetValue(ResourcesPrefabManager.Instance);
-                ITEM_PREFABS.Add(newSkill.ItemID.ToString(), newSkill);*/
-                //AccessTools.Field(typeof(ResourcesPrefabManager), "ITEM_PREFABS").SetValue(ResourcesPrefabManager.Instance, ITEM_PREFABS);
-                /*OLogger.Log($"Descr={armor.Description}"); // Réduit de 50 % la pénalité d’endurance et de mouvement des armures.
-                OLogger.Log($"IsQuickSlotable={armor.IsQuickSlotable}"); // false
-                OLogger.Log($"Icon={armor.ItemIcon}"); // tex_men_iconSkillPassiveArmorTraining_v_icn
-                OLogger.Log($"IgnoreLearnNotification={armor.IgnoreLearnNotification}"); // false
-                OLogger.Log($"HasAdditionalConditions={armor.HasAdditionalConditions}"); // false
-                OLogger.Log($"SchoolIndex={armor.SchoolIndex}"); // 0
-                List<Effect> lstEff = (List<Effect>)AccessTools.Field(typeof(PassiveSkill), "m_passiveEffects").GetValue(armor);
-                OLogger.Log($"m_passiveEffects={lstEff.Count}");
-                Skill testArmorPlus = new PassiveSkill()
-                {
-                    ItemID = 8205221,
-                    //Description = "test",
-                };
-                lstSkills.Add(testArmorPlus);*/
-                /*foreach (var skill in lstSkills)
-                {
-                    OLogger.Log($"{skill.ItemID}: {skill.Name}");
-                }*/
-            }
-            catch (Exception ex)
-            {
-                OLogger.Error(ex.Message);
-            }
-        }
-        private void NetworkLevelLoader_UnPauseGameplay(On.NetworkLevelLoader.orig_UnPauseGameplay orig, NetworkLevelLoader self, string _identifier)
-        {
-            orig(self, _identifier);
         }
 
         private void ItemDetailsDisplay_RefreshDisplay(On.ItemDetailsDisplay.orig_RefreshDisplay orig, ItemDetailsDisplay self, IItemDisplay _itemDisplay)
@@ -499,13 +392,13 @@ namespace MoreGatherableLoot
                     row.SetInfo("Ratio (v/w)", Math.Round(_itemDisplay.RefItem.Value / _itemDisplay.RefItem.Weight, 2).ToString());
                     //m_lblItemName.text += $" ({_itemDisplay.RefItem.Value}/{_itemDisplay.RefItem.Weight} = {_itemDisplay.RefItem.Value/_itemDisplay.RefItem.Weight})"; 
                 }
-                if (m_lblItemName != null && _itemDisplay != null && _itemDisplay.RefItem != null &&
+                /*if (m_lblItemName != null && _itemDisplay != null && _itemDisplay.RefItem != null &&
                     _itemDisplay.RefItem.Value > 0)
                 {
                     List<ItemDetailRowDisplay> m_detailRows = (List<ItemDetailRowDisplay>)AccessTools.Field(typeof(ItemDetailsDisplay), "m_detailRows").GetValue(self);
                     ItemDetailRowDisplay row = (ItemDetailRowDisplay)AccessTools.Method(typeof(ItemDetailsDisplay), "GetRow").Invoke(self, new object[] { m_detailRows.Count });
                     row.SetInfo("Value", _itemDisplay.RefItem.Value.ToString());
-                }
+                }*/
             }
             catch (Exception ex)
             {
