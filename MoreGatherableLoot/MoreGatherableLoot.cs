@@ -1,4 +1,5 @@
-﻿using Partiality.Modloader;
+﻿//using ODebug;
+using Partiality.Modloader;
 using System;
 using System.IO;
 using UnityEngine;
@@ -7,19 +8,20 @@ namespace MoreGatherableLoot
 {
     class GameData
     {
-        public int Amount;
+        public int AmountMin;
+        public int AmountMax;
         public bool AlwaysMax;
     }
 
     public class MoreGatherableLoot : PartialityMod
     {
         private GameData data;
-        private readonly string _modName = "MoreGatherableLoot";
+        private readonly string m_modName = "MoreGatherableLoot";
 
         public MoreGatherableLoot()
         {
-            this.ModID = _modName;
-            this.Version = "1.0.0";
+            this.ModID = m_modName;
+            this.Version = "1.0.2";
             //this.loadPriority = 0;
             this.author = "lasyan3";
         }
@@ -27,14 +29,7 @@ namespace MoreGatherableLoot
         public override void Init()
         {
             base.Init();
-            try
-            {
-                data = LoadSettings();
-            }
-            catch (Exception ex)
-            {
-                Debug.Log($"[{_modName}] Init: {ex.Message}");
-            }
+            data = LoadSettings();
         }
 
         public override void OnLoad() { base.OnLoad(); }
@@ -57,15 +52,20 @@ namespace MoreGatherableLoot
         {
             try
             {
-                //_itemDrop.DroppedItem.InitCachedInfos();
-                if (_container.GetType() == typeof(Gatherable) && _itemDrop.MaxDropCount < data.Amount)
+                _itemDrop.DroppedItem.InitCachedInfos();
+                if (_container.GetType() == typeof(Gatherable)
+                    && (_itemDrop.DroppedItem.IsFood || _itemDrop.DroppedItem.IsIngredient)
+                    && !_itemDrop.DroppedItem.IsDrink
+                    && !_itemDrop.DroppedItem.IsEquippable
+                    && !_itemDrop.DroppedItem.IsDeployable
+                    && _itemDrop.MaxDropCount < data.AmountMax)
                 {
-                    int minDrop = _itemDrop.MinDropCount * (data.AlwaysMax ? data.Amount : 1);
-                    int maxDrop = _itemDrop.MaxDropCount * data.Amount;
-                    if (_itemDrop.MaxDropCount > 1 && _itemDrop.MaxDropCount < data.Amount)
+                    int minDrop = _itemDrop.MinDropCount * (data.AlwaysMax ? data.AmountMax : data.AmountMin);
+                    int maxDrop = _itemDrop.MaxDropCount * data.AmountMax;
+                    if (_itemDrop.MaxDropCount > 1 && _itemDrop.MaxDropCount < data.AmountMax)
                     { // If already multiple quantities, increase instead of multiply
-                        minDrop = data.AlwaysMax ? data.Amount : _itemDrop.MinDropCount;
-                        maxDrop = data.Amount;
+                        minDrop = data.AlwaysMax ? data.AmountMax : data.AmountMin;
+                        maxDrop = data.AmountMax;
                     }
                     // Increase count of items on specific resources (like champignons !)
                     //OLogger.Log($"{_container.GetType().Name}: {_container.name.Split(new char[] { '_' })[1]}");
@@ -77,7 +77,7 @@ namespace MoreGatherableLoot
             catch (Exception ex)
             {
                 //OLogger.Error("ItemDropper_GenerateItem: " + ex.Message, _modName);
-                Debug.Log($"[{_modName}] ItemDropper_GenerateItem: {ex.Message}");
+                Debug.Log($"[{m_modName}] ItemDropper_GenerateItem: {ex.Message}");
             }
             finally
             {
@@ -89,31 +89,14 @@ namespace MoreGatherableLoot
         {
             try
             {
-                using (StreamReader streamReader = new StreamReader($"mods/{_modName}Config.json"))
+                using (StreamReader streamReader = new StreamReader($"mods/{m_modName}Config.json"))
                 {
-                    try
-                    {
-                        return JsonUtility.FromJson<GameData>(streamReader.ReadToEnd());
-                    }
-                    catch (ArgumentNullException)
-                    {
-                    }
-                    catch (FormatException ex)
-                    {
-                        //OLogger.Error("Format Exception", _modName);
-                        Debug.Log($"[{_modName}] LoadSettings: {ex.Message}");
-                    }
+                    return JsonUtility.FromJson<GameData>(streamReader.ReadToEnd());
                 }
             }
-            catch (FileNotFoundException ex)
+            catch (Exception ex)
             {
-                //OLogger.Error("File Not Found Exception", _modName);
-                Debug.Log($"[{_modName}] LoadSettings: {ex.Message}");
-            }
-            catch (IOException ex)
-            {
-                //OLogger.Error("General IO Exception", _modName);
-                Debug.Log($"[{_modName}] LoadSettings: {ex.Message}");
+                Debug.Log($"[{m_modName}] LoadSettings: {ex.Message}");
             }
             return null;
         }
