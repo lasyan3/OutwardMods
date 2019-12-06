@@ -1,9 +1,8 @@
 ﻿using Harmony;
-using InnRentStash;
 using NodeCanvas.DialogueTrees;
 using NodeCanvas.Framework;
 using NodeCanvas.Tasks.Conditions;
-using ODebug;
+//using ODebug;
 using Partiality.Modloader;
 using System;
 using System.Collections.Generic;
@@ -11,6 +10,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
+using static CustomKeybindings;
 
 namespace InnRentStash
 {
@@ -31,6 +31,7 @@ namespace InnRentStash
         private bool m_dialogIsSet;
         private readonly bool m_debugLog = false;
         private TreasureChest m_currentStash;
+        private bool m_isStashSharing = true;
         private readonly Dictionary<string, string> StashAreaToStashUID = new Dictionary<string, string>
         {
             {
@@ -98,7 +99,7 @@ namespace InnRentStash
                         //IsHideEvent = false,
                     }
                 }
-            }
+           }
         };
 
         public InnRentStash()
@@ -144,6 +145,8 @@ namespace InnRentStash
 
                 On.RecipeDisplay.SetReferencedRecipe += RecipeDisplay_SetReferencedRecipe; // Show quantity of owned objects in recipes' name
 
+                On.LocalCharacterControl.UpdateInteraction += LocalCharacterControl_UpdateInteraction;
+                CustomKeybindings.AddAction("StashSharing", KeybindingsCategory.Actions, ControlType.Both, 5);
             }
             catch (Exception ex)
             {
@@ -233,7 +236,7 @@ namespace InnRentStash
             orig(self, ref _list, _tag);
             try
             {
-                if (m_currentStash == null || !m_currentStash.IsInteractable)
+                if (m_currentStash == null || !m_currentStash.IsInteractable || !m_isStashSharing)
                 {
                     return;
                 }
@@ -276,7 +279,7 @@ namespace InnRentStash
             orig(self, ref _list, _itemID);
             try
             {
-                if (m_currentStash == null || !m_currentStash.IsInteractable)
+                if (m_currentStash == null || !m_currentStash.IsInteractable || !m_isStashSharing)
                 {
                     return;
                 }
@@ -318,7 +321,9 @@ namespace InnRentStash
             //DoLog($"CancelRentOnBuyHouse");
             try
             {
-                if (!StashAreaToStashUID.ContainsKey(m_currentArea)) return res;
+                if (string.IsNullOrEmpty(m_currentArea)) return res;
+                if (!StashAreaToQuestEvent.ContainsKey(m_currentArea)) return res;
+                if (m_currentStash == null) return res;
                 // If event is house buying, cancel previous rent event
                 /*if (QuestEventManager.Instance.GetQuestEvent(_eventUID).Name == $"PlayerHouse_{m_currentArea}_HouseAvailable" &&
                     QuestEventManager.Instance.HasQuestEvent(StashAreaToQuestEvent[m_currentArea].QuestEvent))
@@ -365,7 +370,7 @@ namespace InnRentStash
                     }
                 }
 
-                // And Rent Events
+                // Add Rent Events
                 QuestEventFamily innSection = QuestEventDictionary.Sections.FirstOrDefault(s => s.Name == "Inns");
                 if (innSection != null)
                 {
@@ -394,7 +399,7 @@ namespace InnRentStash
             orig(self);
             try
             {
-                if (!StashAreaToStashUID.ContainsKey(m_currentArea) || CharacterManager.Instance.PlayerCharacters.Count == 0)
+                if (!StashAreaToQuestEvent.ContainsKey(m_currentArea) || CharacterManager.Instance.PlayerCharacters.Count == 0)
                 {
                     return;
                 }
@@ -549,6 +554,38 @@ namespace InnRentStash
             return result;
         }
 
+        private void LocalCharacterControl_UpdateInteraction(On.LocalCharacterControl.orig_UpdateInteraction orig, LocalCharacterControl self)
+        {
+            orig(self);
+            if (self.InputLocked)
+            {
+                return;
+            }
+
+            try
+            {
+                UID charUID = self.Character.UID;
+                int playerID = self.Character.OwnerPlayerSys.PlayerID;
+
+                if (CustomKeybindings.m_playerInputManager[playerID].GetButtonDown("StashSharing"))
+                {
+                    m_isStashSharing = !m_isStashSharing;
+                    if (m_isStashSharing)
+                    {
+                        self.Character.CharacterUI.SmallNotificationPanel.ShowNotification("Sharing enabled", 2f);
+                    }
+                    else
+                    {
+                        self.Character.CharacterUI.SmallNotificationPanel.ShowNotification("Sharing disabled", 2f);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Log($"[{m_modName}] CheckRentStatus: {ex.Message}");
+            }
+        }
+
         private void CheckRentStatus()
         {
             try
@@ -583,7 +620,17 @@ namespace InnRentStash
                     return;
                 }
 
-                // Disable generation content  for house stash
+                // If we are in Cierzo, check quest failure
+                if (m_currentArea == "CierzoNewTerrain")
+                {
+                    if (QuestEventManager.Instance.CurrentQuestEvents.Count(q => q.Name == $"General_NotLighthouseOwner") > 0)
+                    {
+                        m_currentStash = null;
+                    }
+                    return;
+                }
+
+                // Disable generation content for house stash
                 AccessTools.Field(typeof(TreasureChest), "m_hasGeneratedContent").SetValue(m_currentStash, true);
 
                 if (QuestEventManager.Instance.CurrentQuestEvents.Count(q => q.Name == $"PlayerHouse_{m_currentArea}_HouseAvailable") > 0)
@@ -660,14 +707,14 @@ namespace InnRentStash
         {
             if (m_debugLog)
             {
-                OLogger.Log(p_message);
+                //OLogger.Log(p_message);
             }
         }
         private void DoOloggerError(string p_message)
         {
             if (m_debugLog)
             {
-                OLogger.Error(p_message);
+                //OLogger.Error(p_message);
             }
         }
     }

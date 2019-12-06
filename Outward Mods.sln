@@ -21,6 +21,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SelfEducated", "SelfEducate
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RottenStashes", "RottenStashes\RottenStashes.csproj", "{BB77CB66-D802-48E5-AA77-538F45DC519D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnhancedTsarSet", "EnhancedTsarSet\EnhancedTsarSet.csproj", "{D134633B-0A89-4477-9938-49E1FEF883AB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoroboreanTravelAgency", "SoroboreanTravelAgency\SoroboreanTravelAgency.csproj", "{77DF7466-ED8F-421D-88DC-BC94254FA22F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +67,14 @@ Global
 		{BB77CB66-D802-48E5-AA77-538F45DC519D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BB77CB66-D802-48E5-AA77-538F45DC519D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BB77CB66-D802-48E5-AA77-538F45DC519D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D134633B-0A89-4477-9938-49E1FEF883AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D134633B-0A89-4477-9938-49E1FEF883AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D134633B-0A89-4477-9938-49E1FEF883AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D134633B-0A89-4477-9938-49E1FEF883AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77DF7466-ED8F-421D-88DC-BC94254FA22F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77DF7466-ED8F-421D-88DC-BC94254FA22F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77DF7466-ED8F-421D-88DC-BC94254FA22F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77DF7466-ED8F-421D-88DC-BC94254FA22F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
