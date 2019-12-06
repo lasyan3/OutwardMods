@@ -78,6 +78,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CustomKeybindings.cs" />
+    <Compile Include="SortingScript.cs" />
+    <Compile Include="TestScript.cs" />
     <Compile Include="WorkInProgress.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

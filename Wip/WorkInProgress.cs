@@ -1,4 +1,8 @@
 ﻿using Harmony;
+using NodeCanvas.DialogueTrees;
+using NodeCanvas.Framework;
+using NodeCanvas.Tasks.Actions;
+using NodeCanvas.Tasks.Conditions;
 using ODebug;
 using Partiality.Modloader;
 using System;
@@ -6,22 +10,29 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
+using Wip;
+using static AreaManager;
 using static CustomKeybindings;
 
-namespace MoreGatherableLoot
+namespace Wip
 {
     public class WorkInProgress : PartialityMod
     {
-        private readonly string _modName = "WorkInProgress";
-        private const int NewSkillArmorExpertID = 8205221;
+        readonly string _modName = "WorkInProgress";
+        const int NewSkillArmorExpertID = 8205221;
+        bool m_isSortByRatio = false;
+
+        public GameObject obj;
+        public string ID = "OTW_WIP";
+        public static SortingScript script;
 
         public WorkInProgress()
         {
             this.ModID = _modName;
             this.Version = "1.0.0";
-            //this.loadPriority = 0;
             this.author = "lasyan3";
         }
 
@@ -42,53 +53,25 @@ namespace MoreGatherableLoot
         {
             base.OnEnable();
 
-            //On.ItemContainer.AddItem_1 += ItemContainer_AddItem_1;
-            //On.SaveInstance.ApplyEnvironment += SaveInstance_ApplyEnvironment;
+            //obj = new GameObject(ID);
+            //GameObject.DontDestroyOnLoad(obj);
+            //script = obj.AddComponent<TestScript>();
 
-            /*	CharSave = new CharacterSave() --> ItemList
-	            WorldSave = new WorldSave() --> QuestList, QuestEventList, KillEventSendersList
-	            LegacyChestSave = new LegacyChestSave();
-	            SceneSaves = new Dictionary<string, EnvironmentSave>() --> InteractionActivatorList, InteractionManagersList
-            */
-            //On.CharacterSave.PrepareSave += CharacterSave_PrepareSave;
-            //On.CharacterSave.ApplyLoadedSaveToChar
+            /*obj = new GameObject(ID);
+            GameObject.DontDestroyOnLoad(obj);
+            script = obj.AddComponent<SortingScript>();*/
 
-            /*
-            QuestEventManager.AddEvent(_eventUID)
-                QuestEventData.CreateEventData(_eventUID)
-                    QuestEventDictionary.GetQuestEvent(_uid)
-                        QuestEventDictionary.RegisterEvent(QuestEventSignature _event)
-                            after QuestEventDictionary.Load, call registerevent
-            */
-            //On.QuestEventDictionary.Load += QuestEventDictionary_Load;
-            //On.QuestEventManager.AddEvent_1 += QuestEventManager_AddEvent_1;
-
-            On.Item.ChangeOwner += Item_ChangeOwner; // Disable flag showing new items
+            // Disable flag showing new items
+            On.Item.ChangeOwner += Item_ChangeOwner;
 
             // Repair all items in inventory: CharacterEquipment.RepairEquipment
             On.CharacterEquipment.RepairEquipmentAfterRest += CharacterEquipment_RepairEquipmentAfterRest;
 
-            #region Add light on wandering npcs
+            // Add light on wandering npcs
             On.SNPC.OnEnable += SNPC_OnEnable;
 
-            //On.SNPC.ctor += SNPC_ctor; // Stutter
-            //On.SNPC.Start += SNPC_Start; // Stutter
-            //On.SNPCMoving.ctor += SNPCMoving_ctor; // Stutter
-            //On.SNPCMoving.Init += SNPCMoving_Init; // Stutter
-            //On.SNPCManager.Update += SNPCManager_Update;
-            //On.ItemLanternVisual.Light += ItemLanternVisual_Light;
-
-            /*On.TOD_LightAtNight.Start += TOD_LightAtNight_Start;
-            On.LightControl.Start += LightControl_Start;
-            On.LightClipChecker.Start += LightClipChecker_Start;
-            On.LightProbesFromNavmesh.GenerateFromNavmesh += LightProbesFromNavmesh_GenerateFromNavmesh;
-            On.TODLightModif.Awake += TODLightModif_Awake;
-            On.TOD_LightParameters.ctor += TOD_LightParameters_ctor;*/
-            #endregion
-
-            On.ItemDetailsDisplay.RefreshDisplay += ItemDetailsDisplay_RefreshDisplay; // Add ratio information
-
-            //On.ItemListDisplay.SortBy += ItemListDisplay_SortBy; // Sort items by value/weight ratio
+            // Add ratio information
+            On.ItemDetailsDisplay.RefreshDisplay += ItemDetailsDisplay_RefreshDisplay;
 
             #region Skills tests
             On.CharacterEquipment.GetTotalMovementModifier += CharacterEquipment_GetTotalMovementModifier; // Update skill value
@@ -99,8 +82,108 @@ namespace MoreGatherableLoot
             On.Trainer.GetSkillTree += Trainer_GetSkillTree;
             #endregion
 
-            //On.NetworkLevelLoader.UnPauseGameplay += NetworkLevelLoader_UnPauseGameplay;
-            //On.ResourcesPrefabManager.LoadItemPrefabs += ResourcesPrefabManager_LoadItemPrefabs;
+            #region Spawn Adventurers
+            //On.SNPC.StartIdleAnim += SNPC_StartIdleAnim;
+            #endregion
+
+            #region Sorting items
+            /*On.LocalCharacterControl.UpdateInteraction += LocalCharacterControl_UpdateInteraction;
+            CustomKeybindings.AddAction("ChangeSorting", KeybindingsCategory.Actions, ControlType.Both, 5);
+            On.ItemListDisplay.SortBy += ItemListDisplay_SortBy;*/
+            #endregion
+
+            On.DT_QuestEventCheats.RefreshCurrentQuestEvent += DT_QuestEventCheats_RefreshCurrentQuestEvent;
+
+            //On.EnvironmentSave.PrepareSave += EnvironmentSave_PrepareSave;
+        }
+
+        private void DT_QuestEventCheats_RefreshCurrentQuestEvent(On.DT_QuestEventCheats.orig_RefreshCurrentQuestEvent orig, DT_QuestEventCheats self)
+        {
+            try
+            {
+                foreach (var item in QuestEventDictionary.Sections)
+                {
+                    item.RelinkEvents();
+                }
+                //orig(self); return;
+
+                int[] eventPerSections = (int[])AccessTools.Field(typeof(DT_QuestEventCheats), "eventPerSections").GetValue(self);
+                GameObject m_sectionDisplay = (GameObject)AccessTools.Field(typeof(DT_QuestEventCheats), "m_sectionDisplay").GetValue(self);
+                GameObject m_questEventDiplay = (GameObject)AccessTools.Field(typeof(DT_QuestEventCheats), "m_questEventDiplay").GetValue(self);
+                List<DT_QuestEventDisplay> m_currentQuestEvents = (List<DT_QuestEventDisplay>)AccessTools.Field(typeof(DT_QuestEventCheats), "m_currentQuestEvents").GetValue(self);
+                ScrollRect m_scrollRectCurrent = (ScrollRect)AccessTools.Field(typeof(DT_QuestEventCheats), "m_scrollRectCurrent").GetValue(self);
+                if (eventPerSections == null)
+                {
+                    eventPerSections = new int[QuestEventDictionary.Sections.Count];
+                }
+                DT_QuestEventDisplay eventDisplay = null;
+                m_sectionDisplay.SetActive(value: true);
+                m_questEventDiplay.SetActive(value: true);
+                for (int i = 0; i < eventPerSections.Length; i++)
+                {
+                    eventPerSections[i] = 0;
+                }
+                IList<QuestEventData> currentQuestEvents = QuestEventManager.Instance.CurrentQuestEvents;
+                int num = 0;
+                for (int j = 0; j < currentQuestEvents.Count; j++)
+                {
+                    int num2 = QuestEventDictionary.Sections.IndexOf(currentQuestEvents[j].GetParentFamilly());
+                    //OLogger.Log($"{currentQuestEvents[j].Name} = {currentQuestEvents[j].GetParentFamilly().Name} ({num2})");
+                    eventPerSections[num2]++;
+                    if (j >= m_currentQuestEvents.Count)
+                    {
+                        GameObject gameObject = UnityEngine.Object.Instantiate(m_questEventDiplay, m_scrollRectCurrent.content);
+                        eventDisplay = gameObject.GetComponent<DT_QuestEventDisplay>();
+                        m_currentQuestEvents.Add(eventDisplay);
+                        string eventUID = currentQuestEvents[j].EventUID;
+                        eventDisplay.GetComponentInChildren<Button>().onClick.AddListener(delegate
+                        {
+                            self.OnRemoveQuestEvent(eventUID, eventDisplay.gameObject);
+                        });
+                    }
+                    else
+                    {
+                        eventDisplay = m_currentQuestEvents[j];
+                    }
+                    num++;
+                    eventDisplay.transform.SetSiblingIndex(num);
+                    eventDisplay.GetComponent<DT_QuestEventDisplay>().SetEvent(currentQuestEvents[j]);
+                }
+                for (int k = num; k < m_currentQuestEvents.Count; k++)
+                {
+                    m_currentQuestEvents[k].gameObject.SetActive(value: false);
+                }
+                m_sectionDisplay.SetActive(value: false);
+                m_questEventDiplay.SetActive(value: false);
+                AccessTools.Field(typeof(DT_QuestEventCheats), "eventPerSections").SetValue(self, eventPerSections);
+            }
+            catch (Exception ex)
+            {
+                OLogger.Error("RefreshCurrentQuestEvent:" + ex.Message);
+            }
+        }
+
+        private void NetworkLevelLoader_UnPauseGameplay(On.NetworkLevelLoader.orig_UnPauseGameplay orig, NetworkLevelLoader self, string _identifier)
+        {
+            orig(self, _identifier);
+        }
+
+        private void NPCInteraction_OnActivate(On.NPCInteraction.orig_OnActivate orig, NPCInteraction self)
+        {
+            orig(self);
+            try
+            {
+            }
+            catch (Exception ex)
+            {
+                OLogger.Error("NPCInteraction_OnActivate:" + ex.Message);
+            }
+        }
+
+        private void SNPC_StartIdleAnim(On.SNPC.orig_StartIdleAnim orig, SNPC self, float _blend)
+        {
+            orig(self, _blend);
+            OLogger.Log($"StartIdle={self.IdleAnimations[0]}");
         }
 
         private int ItemListDisplay_SortByRatio(ItemDisplay _item1, ItemDisplay _item2)
@@ -122,12 +205,13 @@ namespace MoreGatherableLoot
         {
             try
             {
-                if (self.LocalCharacter.IsLocalPlayer && self.CharacterUI.IsInventoryPanelDisplayed && self.ContainerName != "EquipmentDisplay")
+                if (self.LocalCharacter.IsLocalPlayer && self.CharacterUI.IsInventoryPanelDisplayed && self.ContainerName != "EquipmentDisplay" && m_isSortByRatio)
                 {
                     //OLogger.Log($"sort={self.ContainerName}");
 
                     List<ItemDisplay> m_assignedDisplays = (List<ItemDisplay>)AccessTools.Field(typeof(ItemListDisplay), "m_assignedDisplays").GetValue(self);
                     m_assignedDisplays.Sort(ItemListDisplay_SortByRatio);
+
                     for (int i = 0; i < m_assignedDisplays.Count; i++)
                     {
                         m_assignedDisplays[i].transform.SetSiblingIndex(i);
@@ -147,6 +231,7 @@ namespace MoreGatherableLoot
             }
         }
 
+        #region Skills
         private Item ResourcesPrefabManager_GenerateItem(On.ResourcesPrefabManager.orig_GenerateItem orig, ResourcesPrefabManager self, string _itemIDString)
         {
             try
@@ -264,6 +349,7 @@ namespace MoreGatherableLoot
                 bool flag = self.LocalCharacter.Inventory.SkillKnowledge.IsItemLearned(8205220);
                 bool flag2 = self.LocalCharacter.Inventory.SkillKnowledge.IsItemLearned(NewSkillArmorExpertID);
                 Equipment cachedEquip = (Equipment)AccessTools.Field(typeof(ItemDetailsDisplay), "cachedEquipment").GetValue(self);
+                //OLogger.Log($"{cachedEquip.DisplayName} ({cachedEquip.ItemIDString})");
                 if (_infoType == ItemDetailsDisplay.DisplayedInfos.MovementPenalty /*&& self.LocalCharacter != null && self.LocalCharacter.IsLocalPlayer*/)
                 {
                     if (cachedEquip.MovementPenalty > 0f)
@@ -361,6 +447,7 @@ namespace MoreGatherableLoot
             //OLogger.Log($"GetTotalMovementModifier={num}");
             return num;
         }
+        #endregion
 
         private void ItemDetailsDisplay_RefreshDisplay(On.ItemDetailsDisplay.orig_RefreshDisplay orig, ItemDetailsDisplay self, IItemDisplay _itemDisplay)
         {
@@ -389,7 +476,7 @@ namespace MoreGatherableLoot
                     m_lblItemName.text += $" ({invQty + stashQty})";*/
                     List<ItemDetailRowDisplay> m_detailRows = (List<ItemDetailRowDisplay>)AccessTools.Field(typeof(ItemDetailsDisplay), "m_detailRows").GetValue(self);
                     ItemDetailRowDisplay row = (ItemDetailRowDisplay)AccessTools.Method(typeof(ItemDetailsDisplay), "GetRow").Invoke(self, new object[] { m_detailRows.Count });
-                    row.SetInfo("Ratio (v/w)", Math.Round(_itemDisplay.RefItem.Value / _itemDisplay.RefItem.Weight, 2).ToString());
+                    row.SetInfo("Ratio", Math.Round(_itemDisplay.RefItem.Value / _itemDisplay.RefItem.Weight, 2).ToString());
                     //m_lblItemName.text += $" ({_itemDisplay.RefItem.Value}/{_itemDisplay.RefItem.Weight} = {_itemDisplay.RefItem.Value/_itemDisplay.RefItem.Weight})"; 
                 }
                 /*if (m_lblItemName != null && _itemDisplay != null && _itemDisplay.RefItem != null &&
@@ -399,6 +486,13 @@ namespace MoreGatherableLoot
                     ItemDetailRowDisplay row = (ItemDetailRowDisplay)AccessTools.Method(typeof(ItemDetailsDisplay), "GetRow").Invoke(self, new object[] { m_detailRows.Count });
                     row.SetInfo("Value", _itemDisplay.RefItem.Value.ToString());
                 }*/
+                if (m_lblItemName != null && _itemDisplay != null && _itemDisplay.RefItem != null &&
+                    _itemDisplay.RefItem.IsPerishable)
+                {
+                    List<ItemDetailRowDisplay> m_detailRows = (List<ItemDetailRowDisplay>)AccessTools.Field(typeof(ItemDetailsDisplay), "m_detailRows").GetValue(self);
+                    ItemDetailRowDisplay row = (ItemDetailRowDisplay)AccessTools.Method(typeof(ItemDetailsDisplay), "GetRow").Invoke(self, new object[] { m_detailRows.Count });
+                    row.SetInfo("Durability", GameTimetoDays(_itemDisplay.RefItem.CurrentDurability / _itemDisplay.RefItem.PerishScript.DepletionRate));
+                }
             }
             catch (Exception ex)
             {
@@ -406,6 +500,7 @@ namespace MoreGatherableLoot
             }
         }
 
+        #region Light on NPC
         private void ItemLanternVisual_Light(On.ItemLanternVisual.orig_Light orig, ItemLanternVisual self, bool _light, bool _force)
         {
             orig(self, _light, _force);
@@ -435,6 +530,7 @@ namespace MoreGatherableLoot
                 //OLogger.Error(ex.Message);
             }
         }
+        #endregion
 
         private void CharacterEquipment_RepairEquipmentAfterRest(On.CharacterEquipment.orig_RepairEquipmentAfterRest orig, CharacterEquipment self)
         {
@@ -491,5 +587,52 @@ namespace MoreGatherableLoot
             }
         }
 
+        #region Item Sorting
+        private void LocalCharacterControl_UpdateInteraction(On.LocalCharacterControl.orig_UpdateInteraction orig, LocalCharacterControl self)
+        {
+            orig(self);
+            if (self.InputLocked)
+            {
+                return;
+            }
+
+            try
+            {
+                UID charUID = self.Character.UID;
+                int playerID = self.Character.OwnerPlayerSys.PlayerID;
+
+                if (CustomKeybindings.m_playerInputManager[playerID].GetButtonDown("ChangeSorting"))
+                {
+                    m_isSortByRatio = !m_isSortByRatio;
+                    self.Character.CharacterUI.SmallNotificationPanel.ShowNotification($"Ratio sort {m_isSortByRatio}", 2f);
+                }
+            }
+            catch (Exception ex)
+            {
+                OLogger.Error(ex.Message);
+            }
+        }
+
+        #endregion
+
+        private string GameTimetoDays(double p_gametime)
+        {
+            string str = "";
+            int days = (int)p_gametime / 24;
+            if (days > 0) str = $"{days}d, ";
+            int hours = (int)p_gametime % 24;
+            str += $"{hours}h";
+            if (days == 0 && hours == 0)
+            {
+                int minutes = (int)p_gametime * 60;
+                str = $"{minutes} min";
+                if (minutes == 0)
+                {
+                    int seconds = (int)p_gametime * 3600;
+                    str = $"{seconds} sec";
+                }
+            }
+            return str;
+        }
     }
 }

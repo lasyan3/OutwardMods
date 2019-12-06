@@ -1,5 +1,5 @@
-﻿using Harmony;
-using ODebug;
+﻿//using Harmony;
+//using ODebug;
 using Partiality.Modloader;
 using System;
 using System.Collections;
@@ -55,6 +55,28 @@ namespace RottenStashes
                 _infos[13] = "Perishable;" + m_lastGameTime.ToString("0.###"); ;
             }
             orig(self, _infos);
+            /*
+                UID: wqp0aWMHkki-CnfzBV2aVw,
+                ItemId: 4000050,
+                ,
+                ,
+                _hierarchyInfos: 0Null,
+                m_forcePos: ,
+                m_targetPos: (75.3, -5.1, 192.1),
+                m_targetRot: (359.6, 204.2, 359.4),
+                m_stuck: False,
+                ,
+                m_currentDurability: 74.85,
+                -1,
+                ,
+                Perishable;,
+                RebuyLimitTime: ,
+                ResellLimitTime: ,
+                PreviousOwnerUID: acFasKZz60S-XXvejdEWGQ,
+                m_aquireTime: ,
+                m_isNewInInventory: 0,
+                m_litStatus:,
+            */
         }
         private void EnvironmentSave_ApplyData(On.EnvironmentSave.orig_ApplyData orig, EnvironmentSave self)
         {

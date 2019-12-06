@@ -1,5 +1,5 @@
 ﻿using Harmony;
-using ODebug;
+//using ODebug;
 using Partiality.Modloader;
 using System;
 using System.Collections;
@@ -12,6 +12,7 @@ using static CustomKeybindings;
 
 public class SaveSystemReworked : PartialityMod
 {
+    private readonly bool m_debugLog = false;
 
     public SaveSystemReworked()
     {
@@ -52,11 +53,11 @@ public class SaveSystemReworked : PartialityMod
             CustomKeybindings.AddAction("QuickSave", KeybindingsCategory.Actions, ControlType.Both, 5);
             //CustomKeybindings.AddAction("QuickLoad", KeybindingsCategory.Actions, ControlType.Both, 5);
 
-            //OLogger.Log("SaveSystemReworked is enabled");
+            //DoOloggerLog("SaveSystemReworked is enabled");
         }
         catch (Exception ex)
         {
-            OLogger.Error(ex.Message);
+            DoOloggerError(ex.Message);
         }
     }
 
@@ -123,13 +124,13 @@ public class SaveSystemReworked : PartialityMod
         }
         catch (Exception ex)
         {
-            OLogger.Error(ex.Message);
+            DoOloggerError(ex.Message);
         }
     }
     private IEnumerator FinalizeRestart(Character selfChar)
     {
-        OLogger.Log("FinalizeRestart START");
-        //OLogger.Log("Finalize Restart| " + Time.time);
+        DoOloggerLog("FinalizeRestart START");
+        //DoOloggerLog("Finalize Restart| " + Time.time);
         yield return new WaitForSeconds(0.5f);
         while (SaveManager.Instance.SaveInProgress)
         {
@@ -141,7 +142,7 @@ public class SaveSystemReworked : PartialityMod
         }
         CharacterManager.Instance.ClearAllCharacters();
         MenuManager.Instance.ShowSavingIcon(_show: false);
-        //OLogger.Log("Finalize Restart - Done Saving| " + Time.time);
+        //DoOloggerLog("Finalize Restart - Done Saving| " + Time.time);
         PhotonNetwork.Disconnect();
         while (PhotonNetwork.connectionState != 0)
         {
@@ -161,40 +162,40 @@ public class SaveSystemReworked : PartialityMod
         //SceneManager.LoadSceneAsync(0);
         EnvironmentConditions.GameTime = 0.0;
         EnvironmentConditions.DeltaGameTime = 0f;
-        OLogger.Log("FinalizeRestart END");
+        DoOloggerLog("FinalizeRestart END");
         NetworkLevelLoader.Instance.StartCoroutine(ConnectionCoroutine(selfChar));
         yield return null;
     }
     private IEnumerator ConnectionCoroutine2()
     {
-        OLogger.Log("ConnectionCoroutine START");
+        DoOloggerLog("ConnectionCoroutine START");
         AccessTools.Field(typeof(NetworkLevelLoader), "m_hostLost").SetValue(NetworkLevelLoader.Instance, false);
         if ((bool)AccessTools.Field(typeof(NetworkLevelLoader), "m_lastLoadJoinedWorld").GetValue(NetworkLevelLoader.Instance))
         {
-            OLogger.Log("Connected");
+            DoOloggerLog("Connected");
             MenuManager.Instance.SetConnectionScreenText(LocalizationManager.Instance.GetLoc("Connection_Preparation_Joining"));
             MenuManager.Instance.SetReturningToWorldScreen();
         }
         else if ((bool)AccessTools.Field(typeof(NetworkLevelLoader), "m_failedJoin").GetValue(NetworkLevelLoader.Instance))
         {
             yield return new WaitForSeconds(3f);
-            OLogger.Log("Failed to connect");
+            DoOloggerLog("Failed to connect");
             MenuManager.Instance.SetConnectionScreenText(LocalizationManager.Instance.GetLoc("Connection_Preparation_ReloadingWorld"));
             MenuManager.Instance.SetReturningToWorldScreen();
             yield return new WaitForSeconds(3f);
         }
-        OLogger.Log("OK-01");
+        DoOloggerLog("OK-01");
         bool firstCharacter = false;
         AccessTools.Field(typeof(NetworkLevelLoader), "m_sequenceStarted").SetValue(NetworkLevelLoader.Instance, false);
         bool playinscene = false;
         NetworkLevelLoader.Instance.PauseGameplay("JoinSequence", NetworkLevelLoader.Instance);
-        OLogger.Log("OK-02");
+        DoOloggerLog("OK-02");
         AccessTools.Field(typeof(NetworkLevelLoader), "m_loadingLevelFromSave").SetValue(NetworkLevelLoader.Instance, false);
         if (!PhotonNetwork.offlineMode)
         {
             NetworkLevelLoader.Instance.photonView.RPC("RequestPauseGameplay", PhotonTargets.Others);
         }
-        OLogger.Log("OK-03");
+        DoOloggerLog("OK-03");
         if (SplitScreenManager.Instance.LocalPlayerCount == 0 || DemoManager.CurrentDemoStep == DemoManager.DemoStep.CharacterSelection)
         {
             if (!DemoManager.DemoIsActive || DemoManager.CurrentDemoStep == DemoManager.DemoStep.JustStarted)
@@ -202,49 +203,49 @@ public class SaveSystemReworked : PartialityMod
                 SplitScreenManager.Instance.AddLocalPlayer();
             }
             //yield return NetworkLevelLoader.Instance.StartCoroutine(SplitScreenManager.Instance.WaitForCharacterSaveSelection());
-            OLogger.Log("firstCharacter = true");
+            DoOloggerLog("firstCharacter = true");
             firstCharacter = true;
         }
-        OLogger.Log("OK-04");
+        DoOloggerLog("OK-04");
         if ((bool)AccessTools.Field(typeof(NetworkLevelLoader), "m_failedJoin").GetValue(NetworkLevelLoader.Instance))
         {
             firstCharacter = true;
             AccessTools.Field(typeof(NetworkLevelLoader), "m_failedJoin").SetValue(NetworkLevelLoader.Instance, false);
         }
-        OLogger.Log("Start join sequence | " + Time.time.ToString());
+        DoOloggerLog("Start join sequence | " + Time.time.ToString());
         //NetworkLevelLoader.Instance.JoinSequenceStarted();
         AccessTools.Method(typeof(NetworkLevelLoader), "SequenceStarted").Invoke(NetworkLevelLoader.Instance, new object[] { });
         AccessTools.Field(typeof(NetworkLevelLoader), "m_joiningWorld").SetValue(NetworkLevelLoader.Instance, true);
-        OLogger.Log("OK-05");
+        DoOloggerLog("OK-05");
         while (!(bool)AccessTools.Field(typeof(NetworkLevelLoader), "m_sequenceStarted").GetValue(NetworkLevelLoader.Instance))
         {
             yield return null;
         }
-        OLogger.Log("OK-06");
+        DoOloggerLog("OK-06");
         while (!ItemManager.Instance.PrefabsLoaded)
         {
             yield return null;
         }
-        OLogger.Log("OK-07");
+        DoOloggerLog("OK-07");
         Global.Lobby.IsWorldOwner = !PhotonNetwork.isNonMasterClientInRoom;
         if (PhotonNetwork.isNonMasterClientInRoom || firstCharacter)
         {
-            OLogger.Log("Ask for instantiation data | " + Time.time.ToString());
+            DoOloggerLog("Ask for instantiation data | " + Time.time.ToString());
             NetworkInstantiateManager.Instance.RequestInstantiationData();
             while (!NetworkInstantiateManager.Instance.InstantiationDataReceived)
             {
                 yield return null;
             }
-            OLogger.Log("Create player System | " + Time.time.ToString());
+            DoOloggerLog("Create player System | " + Time.time.ToString());
             NetworkInstantiateManager.Instance.CreatePlayerSystem();
-            OLogger.Log("Create item character | " + Time.time.ToString());
+            DoOloggerLog("Create item character | " + Time.time.ToString());
             NetworkInstantiateManager.Instance.CreateItemCharacters();
             while (!NetworkInstantiateManager.Instance.CharacterInstantiationDone)
             {
                 yield return null;
             }
         }
-        OLogger.Log("Prepare Load level | " + Time.time.ToString());
+        DoOloggerLog("Prepare Load level | " + Time.time.ToString());
         if (PhotonNetwork.isNonMasterClientInRoom)
         {
             QuestEventManager.Instance.SyncQuestRequired();
@@ -346,18 +347,18 @@ public class SaveSystemReworked : PartialityMod
                 controlledCharacter.Teleport(vector, worldHostCharacter.transform.rotation);
             }
         }
-        OLogger.Log("End join sequence | " + Time.time.ToString());
+        DoOloggerLog("End join sequence | " + Time.time.ToString());
         if (!PhotonNetwork.offlineMode)
         {
             if (!NetworkLevelLoader.Instance.AllPlayerDoneLoading)
             {
-                OLogger.Log("Waiting for all player + | " + Time.time.ToString());
+                DoOloggerLog("Waiting for all player + | " + Time.time.ToString());
                 while (!NetworkLevelLoader.Instance.AllPlayerDoneLoading)
                 {
                     yield return null;
                 }
             }
-            OLogger.Log("All player Done Loading + | " + Time.time.ToString());
+            DoOloggerLog("All player Done Loading + | " + Time.time.ToString());
         }
         if (PhotonNetwork.isNonMasterClientInRoom && (bool)QuestEventManager.Instance)
         {
@@ -385,28 +386,28 @@ public class SaveSystemReworked : PartialityMod
     }
     private IEnumerator ConnectionCoroutine(Character selfChar)
     {
-        OLogger.Log("ConnectionCoroutine START");
+        DoOloggerLog("ConnectionCoroutine START");
         AccessTools.Field(typeof(NetworkLevelLoader), "m_hostLost").SetValue(NetworkLevelLoader.Instance, false);
 
         AccessTools.Field(typeof(NetworkLevelLoader), "m_sequenceStarted").SetValue(NetworkLevelLoader.Instance, false);
         bool playinscene = false;
-        OLogger.Log("OK-05");
+        DoOloggerLog("OK-05");
         NetworkLevelLoader.Instance.PauseGameplay("JoinSequence", NetworkLevelLoader.Instance);
         //m_loadingLevelFromSave = false;
         AccessTools.Field(typeof(NetworkLevelLoader), "m_loadingLevelFromSave").SetValue(NetworkLevelLoader.Instance, false);
-        OLogger.Log("OK-07");
+        DoOloggerLog("OK-07");
         NetworkLevelLoader.Instance.JoinSequenceStarted();
-        OLogger.Log("OK-08");
+        DoOloggerLog("OK-08");
         while (!(bool)AccessTools.Field(typeof(NetworkLevelLoader), "m_sequenceStarted").GetValue(NetworkLevelLoader.Instance))
         {
             yield return null;
         }
-        OLogger.Log("OK-09");
+        DoOloggerLog("OK-09");
         while (!ItemManager.Instance.PrefabsLoaded)
         {
             yield return null;
         }
-        OLogger.Log("OK-10");
+        DoOloggerLog("OK-10");
 
         /*AccessTools.Field(typeof(Character), "m_startInitDone").SetValue(selfChar, false);
         selfChar.ProcessInit();
@@ -425,7 +426,7 @@ public class SaveSystemReworked : PartialityMod
         {
             yield return null;
         }
-        OLogger.Log("OK-20");
+        DoOloggerLog("OK-20");
         CharacterSave chosenSave = SplitScreenManager.Instance.LocalPlayers[0].ChosenSave;
         QuestEventManager.Instance.SyncQuestRequired();
         NetworkLevelLoader.Instance.LoadLevel(chosenSave.PSave.AreaName, 0, 1.5f, _save: false);
@@ -437,7 +438,7 @@ public class SaveSystemReworked : PartialityMod
         }
         NetworkLevelLoader.Instance.photonView.RPC("SendReceiveTrivialRPCs", PhotonTargets.All, PhotonNetwork.player);
         yield return new WaitForSeconds(0.51f);
-        OLogger.Log("OK-30");
+        DoOloggerLog("OK-30");
         while (!(bool)AccessTools.Field(typeof(NetworkLevelLoader), "m_continueAfterLoading").GetValue(NetworkLevelLoader.Instance))
         {
             yield return null;
@@ -472,6 +473,21 @@ public class SaveSystemReworked : PartialityMod
             {
                 player.CharacterUI.SmallNotificationPanel.ShowNotification(p_notif, 8f);
             }
+        }
+    }
+
+    private void DoOloggerLog(string p_message)
+    {
+        if (m_debugLog)
+        {
+            //OLogger.Log(p_message);
+        }
+    }
+    private void DoOloggerError(string p_message)
+    {
+        if (m_debugLog)
+        {
+            //OLogger.Error(p_message);
         }
     }
 }
