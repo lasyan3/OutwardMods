@@ -1,26 +1,17 @@
 ﻿using Harmony;
-using ODebug;
 using Partiality.Modloader;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.UI;
 
-namespace Wip
+namespace OutwardMods
 {
     public class EnhancedTsarSet : PartialityMod
     {
-        private readonly string _modName = "EnhancedTsarSet";
-
-        public GameObject obj;
-        public string ID = "OTW_EnhancedTsarSet";
+        private readonly string m_modName = "EnhancedTsarSet";
 
         public EnhancedTsarSet()
         {
-            this.ModID = _modName;
+            this.ModID = m_modName;
             this.Version = "1.0.0";
             this.author = "lasyan3";
         }
@@ -36,6 +27,7 @@ namespace Wip
         {
             base.OnDisable();
 
+            On.Item.BaseInit -= Item_BaseInit;
         }
 
         public override void OnEnable()
@@ -49,12 +41,17 @@ namespace Wip
         private void Item_BaseInit(On.Item.orig_BaseInit orig, Item self)
         {
             orig(self);
-            if (self.ItemIDString == "3100140" || self.ItemIDString == "3100141" || self.ItemIDString == "3100142")
+            try
             {
-                //Armor armor = self as Armor;
-                EquipmentStats m_stats = (EquipmentStats)AccessTools.Field(typeof(Item), "m_stats").GetValue(self);
-                if (m_stats != null)
+                if (self.ItemIDString == "3100140" || self.ItemIDString == "3100141" || self.ItemIDString == "3100142")
                 {
+                    //Armor armor = self as Armor;
+                    EquipmentStats m_stats = (EquipmentStats)AccessTools.Field(typeof(Item), "m_stats").GetValue(self);
+                    if (m_stats == null)
+                    {
+                        Debug.Log($"[{m_modName}] Item {self.ItemIDString} has no stats!");
+                        return;
+                    }
                     if (self.ItemIDString == "3100140") // Armor
                     {
                         float damageResistance = 40.0f;
@@ -118,6 +115,10 @@ namespace Wip
                         AccessTools.Field(typeof(EquipmentStats), "m_heatProtection").SetValue(m_stats, 5.0f);
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                Debug.Log($"[{m_modName}] Item_BaseInit: {ex.Message}");
             }
         }
     }
