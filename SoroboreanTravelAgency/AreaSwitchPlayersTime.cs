@@ -1,10 +1,11 @@
 ﻿using NodeCanvas.Framework;
 using ODebug;
 using ParadoxNotion.Design;
+using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Wip
+namespace OutwardMods
 {
     [Name("Area Switch Players")]
     [Category("Character")]
@@ -37,7 +38,14 @@ namespace Wip
 
         protected override void OnExecute()
         {
-            NetworkLevelLoader.Instance.RequestSwitchArea(IncreaseTime.value, AreaManager.Instance.GetArea(Area.value).SceneName, SpawnPoint.value);
+            try
+            {
+                NetworkLevelLoader.Instance.RequestSwitchArea(IncreaseTime.value, AreaManager.Instance.GetArea(Area.value).SceneName, SpawnPoint.value);
+            }
+            catch (Exception ex)
+            {
+                Debug.Log($"[SoroboreanTravelAgency] AreaSwitchPlayersTime.OnExecute: {ex.Message}");
+            }
             /*CampingEventManager.Instance.PrepareDungeonCampEvent
             string text3 = CampingEventManager.Instance.TryGetCampingEvent();
             OLogger.Log($"OnExecute={text3}");

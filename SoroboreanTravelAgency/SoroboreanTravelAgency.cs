@@ -6,30 +6,39 @@ using ODebug;
 using Partiality.Modloader;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
 using static AreaManager;
 
-namespace Wip
+namespace OutwardMods
 {
     public class StrTravel
     {
         public AreaEnum TargetArea;
-        //public int TravelPrice;
-        //public int TravelDuration;
-        //public int TravelRations;
-        //public int TravelSpawnPoint = 0;
         public int DurationDays;
+    }
+    class GameData
+    {
+        public int TravelDayCost;
     }
     public class SoroboreanTravelAgency : PartialityMod
     {
-        private readonly string m_modName = "WorkInProgress";
+        private GameData data;
+        readonly string m_modName = "SoroboreanTravelAgency";
         bool m_dialogIsSet = false;
         public int m_travelArea = -1;
-        private const int TravelDayCost = 30;
-        private readonly Dictionary<AreaEnum, List<StrTravel>> StartAreaToTravel = new Dictionary<AreaEnum, List<StrTravel>>
+        int TravelDayCost;
+        readonly Dictionary<AreaEnum, QuestEventSignature> AreaToQuestEvent = new Dictionary<AreaEnum, QuestEventSignature>
+        {
+            { AreaEnum.CierzoVillage, new QuestEventSignature("ft_cierzo") { EventName = "FastTravel_Cierzo" } },
+            { AreaEnum.Monsoon, new QuestEventSignature("ft_monsoon") { EventName = "FastTravel_Monsoon" } },
+            { AreaEnum.Berg, new QuestEventSignature("ft_berg") { EventName = "FastTravel_Berg" } },
+            { AreaEnum.Levant, new QuestEventSignature("ft_levant") { EventName = "FastTravel_Levant" } },
+        };
+        readonly Dictionary<AreaEnum, List<StrTravel>> StartAreaToTravel = new Dictionary<AreaEnum, List<StrTravel>>
         {
             {
                 AreaEnum.CierzoVillage,
@@ -45,7 +54,7 @@ namespace Wip
                     new StrTravel {
                         TargetArea = AreaEnum.Levant,
                         DurationDays = 7,
-                    }
+                    },
                 }
             },
             {
@@ -62,7 +71,7 @@ namespace Wip
                     new StrTravel {
                         TargetArea = AreaEnum.Levant,
                         DurationDays = 7,
-                    }
+                    },
                 }
             },
             {
@@ -79,7 +88,7 @@ namespace Wip
                     new StrTravel {
                         TargetArea = AreaEnum.Levant,
                         DurationDays = 4,
-                    }
+                    },
                 }
             },
             {
@@ -96,7 +105,7 @@ namespace Wip
                     new StrTravel {
                         TargetArea = AreaEnum.CierzoVillage,
                         DurationDays = 7,
-                    }
+                    },
                 }
             },
         };
@@ -104,13 +113,14 @@ namespace Wip
         public SoroboreanTravelAgency()
         {
             this.ModID = m_modName;
-            this.Version = "1.0.0";
+            this.Version = "1.0.1";
             this.author = "lasyan3";
         }
 
         public override void Init()
         {
             base.Init();
+            data = LoadSettings();
         }
 
         public override void OnLoad() { base.OnLoad(); }
@@ -126,6 +136,50 @@ namespace Wip
 
             On.NPCInteraction.OnActivate += NPCInteraction_OnActivate;
             On.NetworkLevelLoader.UnPauseGameplay += NetworkLevelLoader_UnPauseGameplay;
+            //On.QuestEventManager.AddEvent_1 += QuestEventManager_AddEvent_1;
+            On.QuestEventDictionary.Load += QuestEventDictionary_Load;
+        }
+
+        private void QuestEventDictionary_Load(On.QuestEventDictionary.orig_Load orig)
+        {
+            orig();
+            try
+            {
+                // Add Fast Travel events
+                /*foreach (var item in QuestEventDictionary.Sections)
+                {
+                    OLogger.Log(item.Name);
+                }*/
+                QuestEventFamily innSection = QuestEventDictionary.Sections.FirstOrDefault(s => s.Name == "Neutral_General");
+                if (innSection != null)
+                {
+                    foreach (var item in AreaToQuestEvent)
+                    {
+                        if (!innSection.Events.Contains(item.Value))
+                        {
+                            innSection.Events.Add(item.Value);
+                        }
+                        if (QuestEventDictionary.GetQuestEvent(item.Value.EventUID) == null)
+                        {
+                            QuestEventDictionary.RegisterEvent(item.Value);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Log($"[{m_modName}] QuestEventDictionary_Load: {ex.Message}");
+            }
+        }
+
+        private bool QuestEventManager_AddEvent_1(On.QuestEventManager.orig_AddEvent_1 orig, QuestEventManager self, string _eventUID, int _stackAmount, bool _sendEvent)
+        {
+            bool res = orig(self, _eventUID, _stackAmount, _sendEvent);
+            if (res)
+            {
+                OLogger.Log($"Added event {QuestEventManager.Instance.CurrentQuestEvents.First(e => e.EventUID == _eventUID).Name}");
+            }
+            return res;
         }
 
         private void NetworkLevelLoader_UnPauseGameplay(On.NetworkLevelLoader.orig_UnPauseGameplay orig, NetworkLevelLoader self, string _identifier)
@@ -133,6 +187,21 @@ namespace Wip
             orig(self, _identifier);
             try
             {
+                AreaEnum areaN = (AreaEnum)AreaManager.Instance.GetAreaIndexFromSceneName(SceneManagerHelper.ActiveSceneName);
+                foreach (var aqe in AreaToQuestEvent)
+                {
+                    if (!QuestEventManager.Instance.HasQuestEvent(aqe.Value) && (
+                        aqe.Key == areaN
+                        || aqe.Key == AreaEnum.CierzoVillage
+                        || aqe.Key == AreaEnum.Monsoon && QuestEventManager.Instance.CurrentQuestEvents.Any(e => e.Name == "PlayerHouse_Monsoon_HouseAvailable" || e.Name == "Faction_HolyMission")
+                        || aqe.Key == AreaEnum.Berg && QuestEventManager.Instance.CurrentQuestEvents.Any(e => e.Name == "PlayerHouse_Berg_HouseAvailable" || e.Name == "Faction_BlueChamber")
+                        || aqe.Key == AreaEnum.Levant && QuestEventManager.Instance.CurrentQuestEvents.Any(e => e.Name == "PlayerHouse_Levant_HouseAvailable" || e.Name == "Faction_HeroicKingdom")
+                        ))
+                    {
+                        QuestEventManager.Instance.AddEvent(AreaToQuestEvent[aqe.Key]);
+                    }
+                }
+
                 if (m_travelArea > -1)
                 {
                     Character character = CharacterManager.Instance.GetCharacter(CharacterManager.Instance.PlayerCharacters.Values[0]);
@@ -177,7 +246,6 @@ namespace Wip
 
         private void NPCInteraction_OnActivate(On.NPCInteraction.orig_OnActivate orig, NPCInteraction self)
         {
-            //OLogger.Log($"{self.ActorLocKey}");
             orig(self);
             try
             {
@@ -185,6 +253,10 @@ namespace Wip
                 if (character == null)
                 {
                     return;
+                }
+                if (!string.IsNullOrEmpty(self.ActorLocKey))
+                {
+                    //OLogger.Log($"{self.ActorLocKey}");
                 }
                 // TODO: travel with red merchant
                 if (m_dialogIsSet)
@@ -196,7 +268,11 @@ namespace Wip
                 {
                     return;
                 }
-
+                TravelDayCost = data.TravelDayCost; // 80 - 100 - 120
+                if (areaN == AreaEnum.Levant) // TODO: check quest "Blood under the Sun"
+                {
+                    TravelDayCost = (int)(TravelDayCost * 1.75); // 140 - 175 - 210
+                }
                 if (self.ActorLocKey == "name_unpc_caravantrader_01")
                 {
                     var graphOwner = self.NPCDialogue.DialogueController;
@@ -210,10 +286,6 @@ namespace Wip
                     nStart.statement = new Statement($"Where do you want to go?");
                     nStart.SetActorName(self.ActorLocKey);
 
-                    MultipleChoiceNodeExt nChoose = graph.AddNode<MultipleChoiceNodeExt>();
-                    graph.ConnectNodes(firstNode, nStart, cnt);
-                    graph.ConnectNodes(nStart, nChoose);
-
                     StatementNodeExt nResultMoneyBad = graph.AddNode<StatementNodeExt>();
                     nResultMoneyBad.statement = new Statement("Sorry, you don't have enough silver. Come back when you can afford it!");
                     nResultMoneyBad.SetActorName(self.ActorLocKey);
@@ -224,11 +296,26 @@ namespace Wip
                     nCancel.statement = new Statement("See you soon!");
                     nCancel.SetActorName(self.ActorLocKey);
                     FinishNode nFinish = graph.AddNode<FinishNode>();
+                    StatementNodeExt nNoDestination = graph.AddNode<StatementNodeExt>();
+                    nNoDestination.statement = new Statement("Sorry, you don't have discovered any other town... You can only travel to places you visited at least once!");
+                    nNoDestination.SetActorName(self.ActorLocKey);
 
-
+                    bool hasEntry = false;
+                    MultipleChoiceNodeExt nChoose = graph.AddNode<MultipleChoiceNodeExt>();
                     foreach (StrTravel travel in StartAreaToTravel[areaN])
                     {
-                        nChoose.availableChoices.Add(new MultipleChoiceNodeExt.Choice(new Statement($"{travel.TargetArea} ({travel.DurationDays * TravelDayCost} silver and {travel.DurationDays} rations).")));
+                        if (!QuestEventManager.Instance.HasQuestEvent(AreaToQuestEvent[travel.TargetArea]))
+                        {
+                            continue; // This town has not been visited yet
+                        }
+
+                        hasEntry = true;
+                        string areaLabel = travel.TargetArea.ToString();
+                        if (travel.TargetArea == AreaEnum.CierzoVillage)
+                        {
+                            areaLabel = "Cierzo";
+                        }
+                        nChoose.availableChoices.Add(new MultipleChoiceNodeExt.Choice(new Statement($"{areaLabel} ({travel.DurationDays * TravelDayCost} silver and {travel.DurationDays} rations).")));
 
                         ConditionNode nCheckMoney = graph.AddNode<ConditionNode>();
                         nCheckMoney.condition = new Condition_OwnsItem()
@@ -279,12 +366,21 @@ namespace Wip
                         graph.ConnectNodes(nCheckRations, nResultRationsBad);
                         graph.ConnectNodes(nWishRent, nFinish);
                     }
-                    nChoose.availableChoices.Add(new MultipleChoiceNodeExt.Choice(new Statement("Changed my mind.")));
-
-                    graph.ConnectNodes(nChoose, nCancel);
+                    if (hasEntry)
+                    {
+                        graph.ConnectNodes(firstNode, nStart, cnt);
+                        nChoose.availableChoices.Add(new MultipleChoiceNodeExt.Choice(new Statement("Changed my mind.")));
+                        graph.ConnectNodes(nStart, nChoose);
+                        graph.ConnectNodes(nChoose, nCancel);
+                    }
+                    else
+                    {
+                        graph.ConnectNodes(firstNode, nNoDestination, cnt);
+                    }
 
                     graph.ConnectNodes(nResultMoneyBad, nFinish);
                     graph.ConnectNodes(nResultRationsBad, nFinish);
+                    graph.ConnectNodes(nNoDestination, nFinish);
                     graph.ConnectNodes(nCancel, nFinish);//*/
 
                     m_dialogIsSet = true;
@@ -295,6 +391,22 @@ namespace Wip
                 //OLogger.Error("NPCInteraction_OnActivate:" + ex.Message);
                 Debug.Log($"[{m_modName}] NPCInteraction_OnActivate: {ex.Message}");
             }
+        }
+        private GameData LoadSettings()
+        {
+            try
+            {
+                using (StreamReader streamReader = new StreamReader($"mods/{m_modName}Config.json"))
+                {
+                    return JsonUtility.FromJson<GameData>(streamReader.ReadToEnd());
+                }
+            }
+            catch (Exception ex)
+            {
+                //OLogger.Error("General IO Exception", _modName);
+                Debug.Log($"[{m_modName}] LoadSettings: {ex.Message}");
+            }
+            return null;
         }
     }
 }

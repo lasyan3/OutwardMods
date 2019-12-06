@@ -10,7 +10,7 @@ using System.Text;
 using UnityEngine;
 using static AreaManager;
 
-namespace Wip
+namespace OutwardMods
 {
     public class SetTravelArea : ActionTask
     {
@@ -25,7 +25,8 @@ namespace Wip
             }
             catch (Exception ex)
             {
-                OLogger.Error(ex.Message);
+                //OLogger.Error(ex.Message);
+                Debug.Log($"[SoroboreanTravelAgency] SetTravelArea.OnExecute: {ex.Message}");
             }
             EndAction();
         }
