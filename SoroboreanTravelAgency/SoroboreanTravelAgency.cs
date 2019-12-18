@@ -2,7 +2,7 @@
 using NodeCanvas.DialogueTrees;
 using NodeCanvas.Framework;
 using NodeCanvas.Tasks.Conditions;
-using ODebug;
+//using ODebug;
 using Partiality.Modloader;
 using System;
 using System.Collections.Generic;
@@ -113,7 +113,7 @@ namespace OutwardMods
         public SoroboreanTravelAgency()
         {
             this.ModID = m_modName;
-            this.Version = "1.0.1";
+            this.Version = "1.0.2";
             this.author = "lasyan3";
         }
 
@@ -177,7 +177,7 @@ namespace OutwardMods
             bool res = orig(self, _eventUID, _stackAmount, _sendEvent);
             if (res)
             {
-                OLogger.Log($"Added event {QuestEventManager.Instance.CurrentQuestEvents.First(e => e.EventUID == _eventUID).Name}");
+                //OLogger.Log($"Added event {QuestEventManager.Instance.CurrentQuestEvents.First(e => e.EventUID == _eventUID).Name}");
             }
             return res;
         }

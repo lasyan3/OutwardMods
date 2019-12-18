@@ -39,10 +39,6 @@
       <HintPath>..\Libraries\HOOKS-Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="OLogger">
-      <HintPath>..\Libraries\OLogger.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Partiality">
       <HintPath>..\Libraries\Partiality.dll</HintPath>
       <Private>False</Private>
