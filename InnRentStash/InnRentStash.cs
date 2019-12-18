@@ -147,6 +147,8 @@ namespace InnRentStash
 
                 On.LocalCharacterControl.UpdateInteraction += LocalCharacterControl_UpdateInteraction;
                 CustomKeybindings.AddAction("StashSharing", KeybindingsCategory.Actions, ControlType.Both, 5);
+
+                On.ItemDetailsDisplay.RefreshDisplay += ItemDetailsDisplay_RefreshDisplay;
             }
             catch (Exception ex)
             {
@@ -155,6 +157,32 @@ namespace InnRentStash
             }
         }
 
+        private void ItemDetailsDisplay_RefreshDisplay(On.ItemDetailsDisplay.orig_RefreshDisplay orig, ItemDetailsDisplay self, IItemDisplay _itemDisplay)
+        {
+            orig(self, _itemDisplay);
+            try
+            {
+                Text m_lblItemName = (Text)AccessTools.Field(typeof(ItemDetailsDisplay), "m_lblItemName").GetValue(self);
+                if (m_lblItemName != null && _itemDisplay != null && _itemDisplay.RefItem != null)
+                {
+                    int invQty = self.LocalCharacter.Inventory.GetOwnedItems(_itemDisplay.RefItem.ItemID).Count;
+                    int stashQty = 0;
+                    if (StashAreaToStashUID.ContainsKey(m_currentArea) && m_isStashSharing)
+                    {
+                        TreasureChest stash = (TreasureChest)ItemManager.Instance.GetItem(StashAreaToStashUID[m_currentArea]);
+                        if (stash != null)
+                        {
+                            stashQty = stash.GetItemsFromID(_itemDisplay.RefItem.ItemID).Count;
+                        }
+                    }
+                    m_lblItemName.text += $" ({invQty + stashQty})";
+                }
+            }
+            catch (Exception ex)
+            {
+                //DoOloggerError(ex.Message);
+            }
+        }
 
         private void ItemDisplay_UpdateQuantityDisplay(On.ItemDisplay.orig_UpdateQuantityDisplay orig, ItemDisplay self)
         {
@@ -261,7 +289,7 @@ namespace InnRentStash
                 Text m_lblRecipeName = (Text)AccessTools.Field(typeof(RecipeDisplay), "m_lblRecipeName").GetValue(self);
                 int invQty = self.LocalCharacter.Inventory.GetOwnedItems(_recipe.Results[0].Item.ItemID).Count;
                 int stashQty = 0;
-                if (m_currentStash != null && m_currentStash.IsInteractable)
+                if (m_currentStash != null && m_currentStash.IsInteractable && m_isStashSharing)
                 {
                     stashQty = m_currentStash.GetItemsFromID(_recipe.Results[0].Item.ItemID).Count;
                 }
