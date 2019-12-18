@@ -52,10 +52,6 @@
       <HintPath>..\Libraries\MonoMod.RuntimeDetour.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="OLogger">
-      <HintPath>..\Libraries\OLogger.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Partiality">
       <HintPath>..\Libraries\Partiality.dll</HintPath>
       <Private>False</Private>
@@ -82,7 +78,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CustomDialogues.cs" />
     <Compile Include="CustomKeybindings.cs" />
     <Compile Include="InnRentStash.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
