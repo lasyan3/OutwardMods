@@ -141,12 +141,23 @@ namespace InnRentStash
                 On.ItemDetailsDisplay.RefreshDisplay += ItemDetailsDisplay_RefreshDisplay;
 
                 On.Item.InitInteractionComponents += Item_InitInteractionComponents;
+                On.InteractionOpenChest.OnActivate += InteractionOpenChest_OnActivate;
             }
             catch (Exception ex)
             {
                 DoOloggerError(ex.Message);
                 Debug.Log($"[{m_modName}] OnEnable: {ex.Message}");
             }
+        }
+
+        private void InteractionOpenChest_OnActivate(On.InteractionOpenChest.orig_OnActivate orig, InteractionOpenChest self)
+        {
+            // Disable generation content for house stash
+            if (self.Item is TreasureChest && (self.Item as TreasureChest).SpecialType == ItemContainer.SpecialContainerTypes.Stash)
+            {
+                AccessTools.Field(typeof(TreasureChest), "m_hasGeneratedContent").SetValue(self.Item, true);
+            }
+            orig(self);
         }
 
         private void Item_InitInteractionComponents(On.Item.orig_InitInteractionComponents orig, Item self)
@@ -662,9 +673,6 @@ namespace InnRentStash
                     }
                     return;
                 }
-
-                // Disable generation content for house stash
-                AccessTools.Field(typeof(TreasureChest), "m_hasGeneratedContent").SetValue(m_currentStash, true);
 
                 if (QuestEventManager.Instance.CurrentQuestEvents.Count(q => q.Name == $"PlayerHouse_{areaN}_HouseAvailable") > 0)
                 {
