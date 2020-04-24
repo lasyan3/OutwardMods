@@ -7,7 +7,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>MoreMerchantStock</RootNamespace>
     <AssemblyName>MoreMerchantStock</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <ProjectGuid>{F399EEEB-EAD8-43E6-9D95-3C0B7E12F355}</ProjectGuid>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -16,13 +16,17 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Hooks\ItemDropper_GenerateItem.cs" />
+    <Compile Include="Hooks\MerchantPouch_RefreshInventory.cs" />
     <Compile Include="MoreMerchantStock.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -34,27 +38,29 @@
       <HintPath>..\Libraries\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>..\Libraries\Assembly-CSharp-firstpass.dll</HintPath>
-    </Reference>
-    <Reference Include="HOOKS-Assembly-CSharp">
-      <HintPath>..\Libraries\HOOKS-Assembly-CSharp.dll</HintPath>
+    <Reference Include="BepInEx">
+      <HintPath>..\Libraries\BepInEx.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Partiality">
-      <HintPath>..\Libraries\Partiality.dll</HintPath>
+    <Reference Include="netstandard">
+      <HintPath>..\Libraries\netstandard.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\Libraries\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="UnityEngine.UI">
-      <HintPath>..\Libraries\UnityEngine.UI.dll</HintPath>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>..\Libraries\UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.JSONSerializeModule">
+      <HintPath>..\Libraries\UnityEngine.JSONSerializeModule.dll</HintPath>
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>XCOPY "$(TargetDir)$(TargetFileName)" "D:\SteamLibrary\steamapps\common\Outward\Mods" /Y</PostBuildEvent>
+    <PostBuildEvent>XCOPY "$(TargetDir)$(TargetFileName)" "D:\SteamLibrary\steamapps\common\Outward\BepInEx\plugins" /Y</PostBuildEvent>
   </PropertyGroup>
 </Project>
