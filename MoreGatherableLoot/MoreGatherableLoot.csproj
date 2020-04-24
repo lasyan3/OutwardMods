@@ -9,9 +9,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MoreGatherableLoot</RootNamespace>
     <AssemblyName>MoreGatherableLoot</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,6 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -29,18 +31,24 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>..\Libraries\0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\Libraries\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="HOOKS-Assembly-CSharp">
-      <HintPath>..\Libraries\HOOKS-Assembly-CSharp.dll</HintPath>
+    <Reference Include="BepInEx, Version=5.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Libraries\BepInEx.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Partiality">
-      <HintPath>..\Libraries\Partiality.dll</HintPath>
+    <Reference Include="netstandard">
+      <HintPath>..\Libraries\netstandard.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -53,13 +61,22 @@
       <HintPath>..\Libraries\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>..\Libraries\UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.JSONSerializeModule">
+      <HintPath>..\Libraries\UnityEngine.JSONSerializeModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Hooks\ItemDropper_GenerateItem.cs" />
     <Compile Include="MoreGatherableLoot.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>XCOPY "$(TargetDir)$(TargetFileName)" "D:\SteamLibrary\steamapps\common\Outward\Mods" /Y</PostBuildEvent>
+    <PostBuildEvent>XCOPY "$(TargetDir)$(TargetFileName)" "D:\SteamLibrary\steamapps\common\Outward\BepInEx\plugins" /Y</PostBuildEvent>
   </PropertyGroup>
 </Project>
