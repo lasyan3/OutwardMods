@@ -1,17 +1,12 @@
-﻿using Harmony;
-using NodeCanvas.DialogueTrees;
-using NodeCanvas.Framework;
-using NodeCanvas.Tasks.Conditions;
-//using ODebug;
-using Partiality.Modloader;
+﻿
+using BepInEx;
+using BepInEx.Logging;
+using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using UnityEngine;
-using UnityEngine.UI;
 using static AreaManager;
-using static CustomKeybindings;
 
 namespace InnRentStash
 {
@@ -25,15 +20,18 @@ namespace InnRentStash
         public int RentDuration;
         public string PlayerHouseQuestEventUID;
     }
-    public class InnRentStash : PartialityMod
+    [BepInPlugin(ID, NAME, VERSION)]
+    public class InnRentStash : BaseUnityPlugin
     {
-        private readonly string m_modName = "InnRentStash";
+        const string ID = "com.lasyan3.innrentstash";
+        const string NAME = "InnRentStash";
+        const string VERSION = "1.1.1";
+
         //private string m_currentArea;
-        private bool m_dialogIsSet;
-        private readonly bool m_debugLog = false;
-        private TreasureChest m_currentStash;
-        private bool m_isStashSharing = true;
-        private readonly Dictionary<AreaEnum, string> StashAreaToStashUID = new Dictionary<AreaEnum, string>
+        public static bool m_dialogIsSet;
+        public static TreasureChest m_currentStash;
+        public static bool m_isStashSharing = true;
+        public static readonly Dictionary<AreaEnum, string> StashAreaToStashUID = new Dictionary<AreaEnum, string>
         {
             {
                 AreaEnum.Berg,
@@ -52,7 +50,7 @@ namespace InnRentStash
                 "ImqRiGAT80aE2WtUHfdcMw"
             }
         };
-        private readonly Dictionary<AreaEnum, StrRent> StashAreaToQuestEvent = new Dictionary<AreaEnum, StrRent>
+        public static readonly Dictionary<AreaEnum, StrRent> StashAreaToQuestEvent = new Dictionary<AreaEnum, StrRent>
         {
             {
                 AreaEnum.Berg,
@@ -103,563 +101,43 @@ namespace InnRentStash
            }
         };
 
-        public InnRentStash()
-        {
-            this.ModID = m_modName;
-            this.Version = "1.0.0";
-            //this.loadPriority = 0;
-            this.author = "lasyan3";
-        }
+        public static ManualLogSource MyLogger = BepInEx.Logging.Logger.CreateLogSource(NAME);
 
-        public override void Init() { base.Init(); }
-
-        public override void OnLoad() { base.OnLoad(); }
-
-        public override void OnDisable()
-        {
-            base.OnDisable();
-        }
-
-        public override void OnEnable()
-        {
-            base.OnEnable();
-            try
-            {
-                On.SaveInstance.ApplyEnvironment += SaveInstance_ApplyEnvironment; // Replace stashs
-                On.QuestEventDictionary.Load += QuestEventDictionary_Load;
-                On.QuestEventManager.AddEvent_1 += AddEvent;
-                On.NPCInteraction.OnActivate += NPCInteraction_OnActivate;
-
-                On.CraftingMenu.GetPlayersOwnItems += CraftingMenu_GetPlayersOwnItems; // Get ingredients from the stash (by ItemID)
-                On.CraftingMenu.GetPlayersOwnItems_1 += CraftingMenu_GetPlayersOwnItems_1; // Get ingredients from the stash (by tag)
-
-                On.RecipeDisplay.SetReferencedRecipe += RecipeDisplay_SetReferencedRecipe; // Show quantity of owned objects in recipes' name
-
-                On.LocalCharacterControl.UpdateInteraction += LocalCharacterControl_UpdateInteraction;
-                CustomKeybindings.AddAction("StashSharing", KeybindingsCategory.Actions, ControlType.Both, 5);
-
-                On.ItemDetailsDisplay.RefreshDisplay += ItemDetailsDisplay_RefreshDisplay;
-
-                On.Item.InitInteractionComponents += Item_InitInteractionComponents;
-                On.InteractionOpenChest.OnActivate += InteractionOpenChest_OnActivate;
-            }
-            catch (Exception ex)
-            {
-                DoOloggerError(ex.Message);
-                Debug.Log($"[{m_modName}] OnEnable: {ex.Message}");
-            }
-        }
-
-        private void InteractionOpenChest_OnActivate(On.InteractionOpenChest.orig_OnActivate orig, InteractionOpenChest self)
-        {
-            // Disable generation content for house stash
-            if (self.Item is TreasureChest && (self.Item as TreasureChest).SpecialType == ItemContainer.SpecialContainerTypes.Stash)
-            {
-                AccessTools.Field(typeof(TreasureChest), "m_hasGeneratedContent").SetValue(self.Item, true);
-            }
-            orig(self);
-        }
-
-        private void Item_InitInteractionComponents(On.Item.orig_InitInteractionComponents orig, Item self)
+        internal void Awake()
         {
             try
             {
-                if (StashAreaToStashUID.Values.Contains(self.UID))
-                {
-                    CheckRentStatus(self);
-                }
-                orig(self);
+                var harmony = new Harmony(ID);
+                harmony.PatchAll();
+                MyLogger.LogDebug("Awaken");
             }
             catch (Exception ex)
             {
-                DoOloggerError(ex.Message);
+                MyLogger.LogError(ex.Message);
             }
         }
 
-        private void ItemDetailsDisplay_RefreshDisplay(On.ItemDetailsDisplay.orig_RefreshDisplay orig, ItemDetailsDisplay self, IItemDisplay _itemDisplay)
+        public static void CheckRentStatus()
         {
-            orig(self, _itemDisplay);
             try
             {
                 AreaEnum areaN = (AreaEnum)AreaManager.Instance.GetAreaIndexFromSceneName(SceneManagerHelper.ActiveSceneName);
-                Text m_lblItemName = (Text)AccessTools.Field(typeof(ItemDetailsDisplay), "m_lblItemName").GetValue(self);
-                if (m_lblItemName != null && _itemDisplay != null && _itemDisplay.RefItem != null
-                    && !(_itemDisplay.RefItem is Skill))
-                {
-                    int invQty = self.LocalCharacter.Inventory.GetOwnedItems(_itemDisplay.RefItem.ItemID).Count;
-                    //invQty += self.LocalCharacter.Inventory.Equipment.GetMatchingItems(_itemDisplay.RefItem.ItemID).Count;
-                    int stashQty = 0;
-                    if (StashAreaToStashUID.ContainsKey(areaN) && m_isStashSharing)
-                    {
-                        TreasureChest stash = (TreasureChest)ItemManager.Instance.GetItem(StashAreaToStashUID[areaN]);
-                        if (stash != null)
-                        {
-                            stashQty = stash.GetItemsFromID(_itemDisplay.RefItem.ItemID).Count;
-                        }
-                    }
-                    if (invQty + stashQty > 0)
-                    {
-                        m_lblItemName.text += $" ({invQty + stashQty})";
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                //DoOloggerError(ex.Message);
-            }
-        }
-
-        private void ItemDisplay_UpdateQuantityDisplay(On.ItemDisplay.orig_UpdateQuantityDisplay orig, ItemDisplay self)
-        {
-            try
-            {
-                if (self.RefItem != null)
-                {
-                    DoOloggerLog($"UpdateQuantityDisplay={self.RefItem.Name}");
-                    Text m_lblQuantity = (Text)AccessTools.Field(typeof(ItemDisplay), "m_lblQuantity").GetValue(self);
-                    Transform transform = self.transform.Find("lblQuantity");
-                    if (m_lblQuantity == null && transform == null)
-                    {
-                        DoOloggerLog($"fuck");
-                        Text t = self.transform.GetOrAddComponent<Text>();
-                        t.name = "lblQuantity";
-                        DoOloggerLog($"Try={self.transform.Find("lblQuantity") != null}");
-                        //t.text = "coucou";
-                        //m_lblQuantity = transform.GetComponent<Text>();
-                        //m_lblQuantity.text = string.Empty;
-                    }
-                    /*	transform = base.transform.Find("lblQuantity");
-		                m_lblQuantity = transform.GetComponent<Text>();
-		                m_lblQuantity.text = string.Empty;
-                    */
-                    if (m_lblQuantity != null)
-                    {
-                        m_lblQuantity.text = "5";
-                        DoOloggerLog($"ok");
-                    }
-                    else
-                    {
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                DoOloggerError(ex.Message);
-                Debug.Log($"[{m_modName}] OnEnable: {ex.Message}");
-            }
-            orig(self);
-        }
-
-        private void CraftingMenu_OnRecipeSelected(On.CraftingMenu.orig_OnRecipeSelected orig, CraftingMenu self, int _index, bool _forceRefresh)
-        {
-            orig(self, _index, _forceRefresh);
-            try
-            {
-                IngredientSelector[] ing = (IngredientSelector[])AccessTools.Field(typeof(CraftingMenu), "m_ingredientSelectors").GetValue(self);
-                if (ing.Length > 0)
-                {
-                    /*DoOloggerLog($"IngredientSelector={ing.Length}");
-                    ItemDisplay m_itd = (ItemDisplay)AccessTools.Field(typeof(IngredientSelector), "m_itemDisplay").GetValue(ing[0]);
-                    DoOloggerLog($"{m_itd.RefItem.Name}");
-                    Text m_lblQuantity = (Text)AccessTools.Field(typeof(ItemDisplay), "m_lblQuantity").GetValue(m_itd);
-                    Text m_txtAnyIngredient = (Text)AccessTools.Field(typeof(IngredientSelector), "m_txtAnyIngredient").GetValue(ing[0]);
-                    if (m_lblQuantity != null)
-                    {
-                        m_lblQuantity.text = "5";
-                        DoOloggerLog($"ok");
-                    }
-                    if (m_txtAnyIngredient != null)
-                    {
-                        m_txtAnyIngredient.text = "5";
-                        DoOloggerLog($"ok2");
-                    }*/
-                    //ing[0].SelectedIngredient.MaxStackAmount
-                    //ing[0].
-                }
-            }
-            catch (Exception ex)
-            {
-                DoOloggerError(ex.Message);
-                Debug.Log($"[{m_modName}] CraftingMenu_OnRecipeSelected: {ex.Message}");
-            }
-        }
-
-        private void CraftingMenu_GetPlayersOwnItems_1(On.CraftingMenu.orig_GetPlayersOwnItems_1 orig, CraftingMenu self, ref List<Item> _list, Tag _tag)
-        {
-            orig(self, ref _list, _tag);
-            try
-            {
-                if (m_currentStash == null || !m_currentStash.IsInteractable || !m_isStashSharing)
-                {
-                    return;
-                }
-                _list.AddRange(m_currentStash.GetItemsFromTag(_tag));
-            }
-            catch (Exception ex)
-            {
-                DoOloggerError($"CraftingMenu_GetPlayersOwnItems_1: {ex.Message}");
-                Debug.Log($"[{m_modName}] CraftingMenu_GetPlayersOwnItems_1: {ex.Message}");
-            }
-        }
-
-        private void RecipeDisplay_SetReferencedRecipe(On.RecipeDisplay.orig_SetReferencedRecipe orig, RecipeDisplay self, Recipe _recipe, bool _canBeCompleted, IList<Item>[] _compatibleIngredients, IList<Item> _ingredients)
-        {
-            orig(self, _recipe, _canBeCompleted, _compatibleIngredients, _ingredients);
-            try
-            {
-                if (_recipe.Results.Length == 0)
-                {
-                    return;
-                }
-                Text m_lblRecipeName = (Text)AccessTools.Field(typeof(RecipeDisplay), "m_lblRecipeName").GetValue(self);
-                int invQty = self.LocalCharacter.Inventory.GetOwnedItems(_recipe.Results[0].Item.ItemID).Count;
-                int stashQty = 0;
-                if (m_currentStash != null && m_currentStash.IsInteractable && m_isStashSharing)
-                {
-                    stashQty = m_currentStash.GetItemsFromID(_recipe.Results[0].Item.ItemID).Count;
-                }
-                if (invQty + stashQty > 0)
-                {
-                    self.SetName(m_lblRecipeName.text += $" ({invQty + stashQty})");
-                }
-            }
-            catch (Exception ex)
-            {
-                DoOloggerError($"RecipeDisplay_SetReferencedRecipe: {ex.Message}");
-                Debug.Log($"[{m_modName}] RecipeDisplay_SetReferencedRecipe: {ex.Message}");
-            }
-        }
-
-        private void CraftingMenu_GetPlayersOwnItems(On.CraftingMenu.orig_GetPlayersOwnItems orig, CraftingMenu self, ref List<Item> _list, int _itemID)
-        {
-            orig(self, ref _list, _itemID);
-            try
-            {
-                if (m_currentStash == null || !m_currentStash.IsInteractable || !m_isStashSharing)
-                {
-                    return;
-                }
-                _list.AddRange(m_currentStash.GetItemsFromID(_itemID));
-            }
-            catch (Exception ex)
-            {
-                DoOloggerError($"CraftingMenu_GetPlayersOwnItems: {ex.Message}");
-                Debug.Log($"[{m_modName}] CraftingMenu_GetPlayersOwnItems: {ex.Message}");
-            }
-        }
-
-        private bool AddEvent(On.QuestEventManager.orig_AddEvent_1 orig, QuestEventManager self, string _eventUID, int _stackAmount, bool _sendEvent)
-        {
-            bool res = orig(self, _eventUID, _stackAmount, _sendEvent);
-            DoOloggerLog($"AddEvent({_eventUID})={res}");
-            if (!res) return res;
-            //DoLog($"CancelRentOnBuyHouse");
-            try
-            {
-                AreaEnum areaN = (AreaEnum)AreaManager.Instance.GetAreaIndexFromSceneName(SceneManagerHelper.ActiveSceneName);
-                //if (string.IsNullOrEmpty(m_currentArea)) return res;
-                if (!StashAreaToQuestEvent.ContainsKey(areaN)) return res;
-                if (m_currentStash == null) return res;
-                // If event is house buying, cancel previous rent event
-                /*if (QuestEventManager.Instance.GetQuestEvent(_eventUID).Name == $"PlayerHouse_{m_currentArea}_HouseAvailable" &&
-                    QuestEventManager.Instance.HasQuestEvent(StashAreaToQuestEvent[m_currentArea].QuestEvent))
-                {
-                    QuestEventManager.Instance.RemoveEvent(StashAreaToQuestEvent[m_currentArea].QuestEvent.EventUID);
-                    m_currentStash.SetCanInteract(true);
-                    //character.CharacterUI.SmallNotificationPanel.ShowNotification($"Rent canceled", 5f);
-                    //DoLog("  Rent canceled (house bought)");
-                }*/
-                // If event is rent, activate the stash
-                if (_eventUID == StashAreaToQuestEvent[areaN].QuestEvent.EventUID)
-                {
-                    m_currentStash.SetCanInteract(true);
-                    DoOloggerLog("Activate stash");
-                }
-            }
-            catch (Exception ex)
-            {
-                DoOloggerError($"[{m_modName}] AddEvent: {ex.Message}");
-                Debug.Log($"[{m_modName}] AddEvent: {ex.Message}");
-            }
-            return res;
-        }
-        private void QuestEventDictionary_Load(On.QuestEventDictionary.orig_Load orig)
-        {
-            orig();
-            try
-            {
-                // Get PlayerHouse Event UIDs
-                foreach (var sect in QuestEventDictionary.Sections)
-                {
-                    foreach (var qevt in sect.Events)
-                    {
-                        foreach (var dicStash in StashAreaToQuestEvent)
-                        {
-                            if (qevt.EventName == $"PlayerHouse_{dicStash.Key}_HouseAvailable")
-                            {
-                                StashAreaToQuestEvent[dicStash.Key].PlayerHouseQuestEventUID = qevt.EventUID;
-                                //DoOloggerLog($" > {dicStash.Key}={qevt.EventUID}");
-                            }
-                        }
-                    }
-                }
-
-                // Add Rent Events
-                QuestEventFamily innSection = QuestEventDictionary.Sections.FirstOrDefault(s => s.Name == "Inns");
-                if (innSection != null)
-                {
-                    foreach (StrRent item in StashAreaToQuestEvent.Values)
-                    {
-                        if (!innSection.Events.Contains(item.QuestEvent))
-                        {
-                            innSection.Events.Add(item.QuestEvent);
-                        }
-                        if (QuestEventDictionary.GetQuestEvent(item.QuestEvent.EventUID) == null)
-                        {
-                            QuestEventDictionary.RegisterEvent(item.QuestEvent);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                DoOloggerError($"[{m_modName}] QuestEventDictionary_Load: {ex.Message}");
-                Debug.Log($"[{m_modName}] QuestEventDictionary_Load: {ex.Message}");
-            }
-        }
-
-        private void NPCInteraction_OnActivate(On.NPCInteraction.orig_OnActivate orig, NPCInteraction self)
-        {
-            orig(self);
-            try
-            {
-                AreaEnum areaN = (AreaEnum)AreaManager.Instance.GetAreaIndexFromSceneName(SceneManagerHelper.ActiveSceneName);
-                if (!StashAreaToQuestEvent.ContainsKey(areaN) || CharacterManager.Instance.PlayerCharacters.Count == 0)
+                MyLogger.LogDebug($"CheckRentStatus={areaN}");
+                if (!CheckStash())
                 {
                     return;
                 }
                 Character character = CharacterManager.Instance.GetCharacter(CharacterManager.Instance.PlayerCharacters.Values[0]);
-                if (character == null)
+                m_currentStash = (TreasureChest)ItemManager.Instance.GetItem(StashAreaToStashUID[areaN]);
+                if (!StashAreaToStashUID.Values.Contains(m_currentStash.UID))
                 {
+                    m_currentStash = null;
+                    MyLogger.LogDebug($" > Unknown stash");
                     return;
                 }
-                if (self.ActorLocKey != StashAreaToQuestEvent[areaN].NpcName || m_dialogIsSet)
-                {
-                    return;
-                }
-                var graphOwner = self.NPCDialogue.DialogueController;
-                var graph = (Graph)graphOwner.GetType().BaseType.GetField("_graph", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(graphOwner as GraphOwner<DialogueTreeExt>);
-                var nodes = typeof(Graph).GetField("_nodes", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(graph as Graph) as List<Node>;
-                var firstNode = nodes.First(n => n.GetType().Name == "MultipleChoiceNodeExt");
-
-                //TreeNode<Node>.DebugDialogue(nodes[0], 0);
-                /* Un dialogue c'est: afficher un texte + action(optionnel) + choix(optionnel)
-                 * 
-                 * Outil de conversion Graph --> ma structure
-                 */
-                (firstNode as MultipleChoiceNodeExt).availableChoices.Insert(1, new MultipleChoiceNodeExt.Choice(new Statement("I want to rent a stash, please.")));
-                StatementNodeExt nStart = graph.AddNode<StatementNodeExt>();
-                nStart.statement = new Statement($"Of course! Renting a stash costs only {StashAreaToQuestEvent[areaN].RentPrice} silver for one week.");
-                nStart.SetActorName(self.ActorLocKey);
-                MultipleChoiceNodeExt nChoose = graph.AddNode<MultipleChoiceNodeExt>();
-                nChoose.availableChoices.Add(new MultipleChoiceNodeExt.Choice(new Statement("Sh*t up and take my money!")));
-                nChoose.availableChoices.Add(new MultipleChoiceNodeExt.Choice(new Statement("I'll be back.")));
-                ConditionNode nCheckMoney = graph.AddNode<ConditionNode>();
-                nCheckMoney.condition = new Condition_OwnsItem()
-                {
-                    character = character,
-                    item = new ItemReference { ItemID = 9000010 },
-                    minAmount = StashAreaToQuestEvent[areaN].RentPrice
-                };
-                ConditionNode nCheckHouse = graph.AddNode<ConditionNode>();
-
-                nCheckHouse.condition = new Condition_QuestEventOccured()
-                {
-                    QuestEventRef = new QuestEventReference { EventUID = StashAreaToQuestEvent[areaN].PlayerHouseQuestEventUID }
-                };
-                StatementNodeExt nCheckHouseBad = graph.AddNode<StatementNodeExt>();
-                nCheckHouseBad.statement = new Statement("You have a house, no need to rent a stash anymore.");
-                nCheckHouseBad.SetActorName(self.ActorLocKey);
-                ConditionNode nCheckAlready = graph.AddNode<ConditionNode>();
-                nCheckAlready.condition = new Condition_QuestEventOccured()
-                {
-                    QuestEventRef = new QuestEventReference { EventUID = StashAreaToQuestEvent[areaN].QuestEvent.EventUID }
-                };
-                StatementNodeExt nCheckAlreadyBad = graph.AddNode<StatementNodeExt>();
-                nCheckAlreadyBad.statement = new Statement("You've already rented a stash for the week! Just use it.");
-                nCheckAlreadyBad.SetActorName(self.ActorLocKey);
-
-                ActionNode nWishRent = graph.AddNode<ActionNode>();
-                ActionList action = new ActionList();
-                action.AddAction(new NodeCanvas.Tasks.Actions.RemoveItem()
-                {
-                    fromCharacter = new BBParameter<Character>(character),
-                    Items = new List<BBParameter<ItemReference>>() { new ItemReference { ItemID = 9000010 } },
-                    Amount = new List<BBParameter<int>>() { new BBParameter<int>(StashAreaToQuestEvent[areaN].RentPrice) },
-                });
-                action.AddAction(new NodeCanvas.Tasks.Actions.SendQuestEvent()
-                {
-                    QuestEventRef = new QuestEventReference { EventUID = StashAreaToQuestEvent[areaN].QuestEvent.EventUID }
-                });
-                action.AddAction(new NodeCanvas.Tasks.Actions.PlaySound()
-                {
-                    Sound = GlobalAudioManager.Sounds.UI_MERCHANT_CompleteTransaction
-                });
-                nWishRent.action = action;
-
-                StatementNodeExt nResultOk = graph.AddNode<StatementNodeExt>();
-                nResultOk.statement = new Statement("Thanks, I've unlocked the stash for you.");
-                nResultOk.SetActorName(self.ActorLocKey);
-                StatementNodeExt nResultBad = graph.AddNode<StatementNodeExt>();
-                nResultBad.statement = new Statement("Sorry, you don't have enough silver. Come back when you can afford it!");
-                nResultBad.SetActorName(self.ActorLocKey);
-                StatementNodeExt nCancel = graph.AddNode<StatementNodeExt>();
-                nCancel.statement = new Statement("See you soon!");
-                nCancel.SetActorName(self.ActorLocKey);
-                FinishNode nFinish = graph.AddNode<FinishNode>();
-
-                graph.ConnectNodes(firstNode, nCheckHouse, 1); // Check if the player owns the house of the town
-                graph.ConnectNodes(nCheckHouse, nCheckHouseBad); // The player owns it --> exit
-                graph.ConnectNodes(nCheckHouse, nCheckAlready); // Check if the player has already a rent ongoing in the town
-                graph.ConnectNodes(nCheckAlready, nCheckAlreadyBad); // The player already has the rent --> exit
-                graph.ConnectNodes(nCheckAlready, nStart); // All checks successfull, we can show the pricefor the rent
-                graph.ConnectNodes(nStart, nChoose); // Show the choices for the player (to rent or not)
-                graph.ConnectNodes(nChoose, nCheckMoney); // Check if the player has enough money
-                graph.ConnectNodes(nChoose, nCancel); // The player doesn't want to rent --> exit
-                graph.ConnectNodes(nCheckMoney, nWishRent); // The player has enough money, go activate the rent
-                graph.ConnectNodes(nCheckMoney, nResultBad); // The player doesn't have enough money --> exit
-                graph.ConnectNodes(nWishRent, nResultOk); // Activate the rent!
-
-                graph.ConnectNodes(nCheckHouseBad, nFinish);
-                graph.ConnectNodes(nCheckAlreadyBad, nFinish);
-                graph.ConnectNodes(nResultBad, nFinish);
-                graph.ConnectNodes(nResultOk, nFinish);
-                graph.ConnectNodes(nCancel, nFinish);//*/
-
-                m_dialogIsSet = true;
-            }
-            catch (Exception ex)
-            {
-                DoOloggerError("NPCInteraction_OnActivate:" + ex.Message);
-                Debug.Log($"[{m_modName}] NPCInteraction_OnActivate: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// This event is called each time the environment changes (aka the player as a loading screen).
-        /// I use this to save the name of the current area, and to reset the flag indicating the dialog for
-        /// the innkeepers needs to be reset.
-        /// </summary>
-        /// <param name="orig"></param>
-        /// <param name="self"></param>
-        /// <param name="_areaName"></param>
-        /// <returns></returns>
-        private bool SaveInstance_ApplyEnvironment(On.SaveInstance.orig_ApplyEnvironment orig, SaveInstance self, string _areaName)
-        {
-            //DoOloggerLog($"Area={_areaName}");
-            bool result = orig(self, _areaName);
-            try
-            {
-                //m_currentArea = _areaName;
-                m_dialogIsSet = false;
-
-                #region TODO : Thieves in town!
-                // Parcourir tous les objets appartenant au joueur dans la ville
-                /*for (int i = 0; i < ItemManager.Instance.WorldItems.Count; i++)
-                {
-                    string uid = ItemManager.Instance.WorldItems.Keys[i];
-                    Item it = ItemManager.Instance.WorldItems.Values[i];
-                    if (it.OwnerCharacter != null && it.OwnerCharacter.IsLocalPlayer && !it.IsEquipped &&
-                        /*it.ParentContainer != it.OwnerCharacter.Inventory.EquippedBag &&* it.IsInWorld
-                        /*it.ParentContainer != it.OwnerCharacter.Inventory.Pouch*)
-                    {
-                        DoLog($"Delete {it.Name}");
-                        ItemManager.Instance.DestroyItem(uid);
-                    }
-                }*/
-                #endregion
-
-            }
-            catch (Exception ex)
-            {
-                DoOloggerError($"[SaveInstance_ApplyEnvironment: {ex.Message}");
-                Debug.Log($"[{m_modName}] SaveInstance_ApplyEnvironment: {ex.Message}");
-            }
-
-            return result;
-        }
-
-        private void LocalCharacterControl_UpdateInteraction(On.LocalCharacterControl.orig_UpdateInteraction orig, LocalCharacterControl self)
-        {
-            orig(self);
-            if (self.InputLocked)
-            {
-                return;
-            }
-
-            try
-            {
-                UID charUID = self.Character.UID;
-                int playerID = self.Character.OwnerPlayerSys.PlayerID;
-
-                if (CustomKeybindings.m_playerInputManager[playerID].GetButtonDown("StashSharing"))
-                {
-                    m_isStashSharing = !m_isStashSharing;
-                    if (m_isStashSharing)
-                    {
-                        self.Character.CharacterUI.SmallNotificationPanel.ShowNotification("Sharing enabled", 2f);
-                    }
-                    else
-                    {
-                        self.Character.CharacterUI.SmallNotificationPanel.ShowNotification("Sharing disabled", 2f);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.Log($"[{m_modName}] CheckRentStatus: {ex.Message}");
-            }
-        }
-
-        private void CheckRentStatus(Item p_stash)
-        {
-            try
-            {
-                AreaEnum areaN = (AreaEnum)AreaManager.Instance.GetAreaIndexFromSceneName(SceneManagerHelper.ActiveSceneName);
-                if (!StashAreaToStashUID.Values.Contains(p_stash.UID))
-                {
-                    return;
-                }
-                if (!StashAreaToStashUID.Keys.Contains(areaN))
-                {
-                    return;
-                }
-                if (CharacterManager.Instance.PlayerCharacters.Count == 0)
-                {
-                    DoOloggerLog($" > PlayerCharacters=0");
-                    return;
-                }
-                if (CharacterManager.Instance.PlayerCharacters.Values.Count == 0)
-                {
-                    DoOloggerLog($" > PlayerCharacters.Values=0");
-                    return;
-                }
-                Character character = CharacterManager.Instance.GetCharacter(CharacterManager.Instance.PlayerCharacters.Values[0]);
-                if (character == null)
-                {
-                    DoOloggerLog($" > NullCharacter");
-                    return;
-                }
-                m_currentStash = null;
-                if (!StashAreaToStashUID.ContainsKey(areaN) || CharacterManager.Instance.PlayerCharacters.Count == 0)
-                {
-                    DoOloggerLog($" > UnkStash");
-                    return;
-                }
-                m_currentStash = (TreasureChest)p_stash; //(TreasureChest)ItemManager.Instance.GetItem(StashAreaToStashUID[areaN]);
                 if (m_currentStash == null)
                 {
-                    DoOloggerLog($" > NullStash");
+                    MyLogger.LogDebug($" > NullStash");
                     return;
                 }
 
@@ -677,13 +155,12 @@ namespace InnRentStash
                 if (QuestEventManager.Instance.CurrentQuestEvents.Count(q => q.Name == $"PlayerHouse_{areaN}_HouseAvailable") > 0)
                 {
                     // House has been bought here, cancel rent event if present
-                    DoOloggerLog(" > House bought here");
+                    MyLogger.LogDebug(" > House bought here");
                     if (QuestEventManager.Instance.HasQuestEvent(StashAreaToQuestEvent[areaN].QuestEvent))
                     {
                         QuestEventManager.Instance.RemoveEvent(StashAreaToQuestEvent[areaN].QuestEvent.EventUID);
-                        //m_currentStash.SetCanInteract(true);
                     }
-                    //return;
+                    return;
                 }
 
                 #region Move stash to inn
@@ -708,53 +185,48 @@ namespace InnRentStash
                         //m_notification = $"Rent has expired!";
                         character.CharacterUI.SmallNotificationPanel.ShowNotification("Rent has expired!", 8f);
                         QuestEventManager.Instance.RemoveEvent(StashAreaToQuestEvent[areaN].QuestEvent.EventUID);
-                        DoOloggerLog(" > Rent expired!");
+                        MyLogger.LogDebug(" > Rent expired!");
                     }
                     else
                     {
                         //m_notification = "Rent ongoing";
                         character.CharacterUI.SmallNotificationPanel.ShowNotification("Rent ongoing", 8f);
                         m_currentStash.SetCanInteract(true);
-                        DoOloggerLog(" > Rent still valid");
+                        MyLogger.LogDebug(" > Rent still valid");
                     }
                 }
                 else
                 {
-                    DoOloggerLog($" > NoQuestEvent");
+                    MyLogger.LogDebug($" > NoQuestEvent");
                 }
 
             }
             catch (Exception ex)
             {
-                DoOloggerError("CheckRentStatus:" + ex.Message);
-                Debug.Log($"[{m_modName}] CheckRentStatus: {ex.Message}");
+                MyLogger.LogError(ex.Message);
             }
         }
 
-        private string GameTimetoDays(double p_gametime)
+        public static bool CheckStash()
         {
-            double _realtime = p_gametime + 24 + EnvironmentConditions.Instance.TimeOfDay;
-            string str = "";
-            int days = (int)p_gametime / 24;
-            if (days > 0) str = $"{days}d, ";
-            int hours = (int)p_gametime % 24;
-            str += $"{hours}h";
-            return str;
-        }
+            AreaEnum areaN = (AreaEnum)AreaManager.Instance.GetAreaIndexFromSceneName(SceneManagerHelper.ActiveSceneName);
+            if (!StashAreaToStashUID.Keys.Contains(areaN))
+            {
+                MyLogger.LogDebug($" > Unknown area");
+                return false;
+            }
 
-        private void DoOloggerLog(string p_message)
-        {
-            if (m_debugLog)
+            if (CharacterManager.Instance.PlayerCharacters.Count == 0)
             {
-                //OLogger.Log(p_message);
+                MyLogger.LogDebug($" > PlayerCharacters=0");
+                return false;
             }
-        }
-        private void DoOloggerError(string p_message)
-        {
-            if (m_debugLog)
+            if (CharacterManager.Instance.PlayerCharacters.Values.Count == 0)
             {
-                //OLogger.Error(p_message);
+                MyLogger.LogDebug($" > PlayerCharacters.Values=0");
+                return false;
             }
+            return true;
         }
     }
 }
