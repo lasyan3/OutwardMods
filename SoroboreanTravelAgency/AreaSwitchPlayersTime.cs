@@ -1,9 +1,7 @@
 ﻿using NodeCanvas.Framework;
-//using ODebug;
 using ParadoxNotion.Design;
 using System;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace OutwardMods
 {
@@ -15,6 +13,7 @@ namespace OutwardMods
 
         public BBParameter<int> SpawnPoint = 0;
         public BBParameter<float> IncreaseTime = 0;
+        public BBParameter<Character> Character;
 
         [SerializeField]
         protected string m_targetUID;
@@ -40,11 +39,21 @@ namespace OutwardMods
         {
             try
             {
+                Character.value.PlayerStats.Sleep = Character.value.PlayerStats.MaxSleep + 50f;
+                Character.value.PlayerStats.Food = Character.value.PlayerStats.MaxFood;
+                Character.value.PlayerStats.Drink = Character.value.PlayerStats.MaxDrink;
+                //Character.value.PlayerStats.RestoreAllVitals();
+                Character.value.PlayerStats.Temperature = 50f;
+                Character.value.PlayerStats.SetWasInTravel();
+                Character.value.StatusEffectMngr.IncreaseLongStatusesAge((int)IncreaseTime.value);
+                Character.value.StatusEffectMngr.RemoveShortStatuses();
+                Character.value.Inventory.SkillKnowledge.ResetAllCooldowns();
+
                 NetworkLevelLoader.Instance.RequestSwitchArea(IncreaseTime.value, AreaManager.Instance.GetArea(Area.value).SceneName, SpawnPoint.value);
             }
             catch (Exception ex)
             {
-                Debug.Log($"[SoroboreanTravelAgency] AreaSwitchPlayersTime.OnExecute: {ex.Message}");
+                SoroboreanTravelAgency.MyLogger.LogError(ex.Message);
             }
             /*CampingEventManager.Instance.PrepareDungeonCampEvent
             string text3 = CampingEventManager.Instance.TryGetCampingEvent();
