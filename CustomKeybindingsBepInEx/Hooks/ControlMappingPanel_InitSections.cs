@@ -9,12 +9,10 @@ namespace Hooks
     [HarmonyPatch(typeof(ControlMappingPanel), "InitSections")]
     public class ControlMappingPanel_InitSections
     {
-        static ManualLogSource MyLogger = BepInEx.Logging.Logger.CreateLogSource("InitSections");
-
         [HarmonyPrefix]
         public static bool InitSections( ControllerMap _controllerMap)
         {
-
+            MyLogger.LogDebug("InitSections");
             // Loop through our custom actions we added via Rewired
             foreach (int myActionId in CustomKeybindings.myCustomActionIds.Keys)
             {
@@ -33,7 +31,7 @@ namespace Hooks
                 //   if (self.ControllerType == ControlMappingPanel.ControlType.Keyboard) {
                 //
 
-                bool shouldLog = true;
+                bool shouldLog = false;
                 if (shouldLog)
                 {
                     MyLogger.LogDebug("_controllerMap is keyboard or mouse: " + (_controllerMap is KeyboardMap || _controllerMap is MouseMap));

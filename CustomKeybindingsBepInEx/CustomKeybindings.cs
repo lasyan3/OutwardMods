@@ -1,12 +1,18 @@
-﻿using BepInEx.Logging;
+﻿using BepInEx;
+using BepInEx.Logging;
 using MonoMod.RuntimeDetour; // for manual hooks
 using Rewired;               // for InputManager_Base class
 using Rewired.Data;          // for UserData class
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
-public class CustomKeybindings {
+[BepInPlugin(ID, NAME, VERSION)]
+public class CustomKeybindings : BaseUnityPlugin {
+    const string ID = "com.kongenav.customkeybindings";
+    const string NAME = "CustomKeybindings";
+    const string VERSION = "3.0.0";
 
     // Recreate this enum from Rewired_Core.dll so that users of CustomKeybindings don't have to import Rewired
     public enum InputActionType {
@@ -37,7 +43,21 @@ public class CustomKeybindings {
         Both
     }
 
-    static ManualLogSource MyLogger = BepInEx.Logging.Logger.CreateLogSource("CustomKeyBindings");
+    public static ManualLogSource MyLogger = BepInEx.Logging.Logger.CreateLogSource("CustomKeyBindings");
+
+    internal void Awake()
+    {
+        try
+        {
+            var harmony = new HarmonyLib.Harmony(ID);
+            harmony.PatchAll();
+            MyLogger.LogDebug("Awaken");
+        }
+        catch (Exception ex)
+        {
+            MyLogger.LogError(ex.Message);
+        }
+    }
 
     // Mods will need to query the RewiredInputs.GetButton... methods to detect when their keys are pressed
     // The player-specific RewiredInputs instances are in a private variable, and must be acquired by reflection
