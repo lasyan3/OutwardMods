@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using static AreaManager;
+using static CustomKeybindings;
 
 namespace InnRentStash
 {
@@ -109,6 +110,7 @@ namespace InnRentStash
             {
                 var harmony = new Harmony(ID);
                 harmony.PatchAll();
+                CustomKeybindings.AddAction("StashSharing", KeybindingsCategory.Actions, ControlType.Both, 5);
                 MyLogger.LogDebug("Awaken");
             }
             catch (Exception ex)

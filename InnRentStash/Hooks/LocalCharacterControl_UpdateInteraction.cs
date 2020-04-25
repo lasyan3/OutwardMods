@@ -23,7 +23,7 @@ namespace InnRentStash.Hooks
                 UID charUID = __instance.Character.UID;
                 int playerID = __instance.Character.OwnerPlayerSys.PlayerID;
 
-                if (Input.GetKeyDown(KeyCode.F6))
+                if (CustomKeybindings.m_playerInputManager[playerID].GetButtonDown("StashSharing"))
                 {
                     InnRentStash.m_isStashSharing = !InnRentStash.m_isStashSharing;
                     if (InnRentStash.m_isStashSharing)

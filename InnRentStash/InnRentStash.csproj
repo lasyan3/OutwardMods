@@ -90,6 +90,13 @@
     <Compile Include="InnRentStash.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CustomKeybindingsBepInEx\CustomKeybindingsBepInEx.csproj">
+      <Project>{78ca7d1b-b8d5-4777-8de7-593778358a47}</Project>
+      <Name>CustomKeybindingsBepInEx</Name>
+      <Private>False</Private>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>XCOPY "$(TargetDir)$(TargetFileName)" "D:\SteamLibrary\steamapps\common\Outward\BepInEx\plugins" /Y</PostBuildEvent>

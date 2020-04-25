@@ -50,7 +50,7 @@ namespace InnRentStash.Hooks
                 nStart.SetActorName(__instance.ActorLocKey);
                 MultipleChoiceNodeExt nChoose = graph.AddNode<MultipleChoiceNodeExt>();
                 nChoose.availableChoices.Add(new MultipleChoiceNodeExt.Choice(new Statement("Sh*t up and take my money!")));
-                nChoose.availableChoices.Add(new MultipleChoiceNodeExt.Choice(new Statement("I'll be back.")));
+                nChoose.availableChoices.Add(new MultipleChoiceNodeExt.Choice(new Statement("I will be back.")));
                 ConditionNode nCheckMoney = graph.AddNode<ConditionNode>();
                 nCheckMoney.condition = new Condition_OwnsItem()
                 {
