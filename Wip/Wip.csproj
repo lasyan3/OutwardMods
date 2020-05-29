@@ -7,11 +7,12 @@
     <ProjectGuid>{F88DCFE5-655E-48A7-A41D-4A5D75B024DF}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Wip</RootNamespace>
-    <AssemblyName>Wip</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <RootNamespace>WorkInProgress</RootNamespace>
+    <AssemblyName>WorkInProgress</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,6 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -29,38 +31,27 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony">
       <HintPath>..\Libraries\0Harmony.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\Libraries\Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass">
       <HintPath>..\Libraries\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
-    <Reference Include="HOOKS-Assembly-CSharp">
-      <HintPath>..\Libraries\HOOKS-Assembly-CSharp.dll</HintPath>
+    <Reference Include="BepInEx">
+      <HintPath>..\Libraries\BepInEx.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="MonoMod.RuntimeDetour, Version=18.6.0.33006, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Libraries\MonoMod.RuntimeDetour.dll</HintPath>
-    </Reference>
-    <Reference Include="OLogger">
-      <HintPath>..\Libraries\OLogger.dll</HintPath>
-    </Reference>
-    <Reference Include="OModAPI">
-      <HintPath>..\Libraries\OModAPI.dll</HintPath>
-    </Reference>
-    <Reference Include="OutwardExplorer">
-      <HintPath>..\Libraries\OutwardExplorer.dll</HintPath>
-    </Reference>
-    <Reference Include="Partiality">
-      <HintPath>..\Libraries\Partiality.dll</HintPath>
-    </Reference>
-    <Reference Include="Rewired_Core">
-      <HintPath>..\Libraries\Rewired_Core.dll</HintPath>
+    <Reference Include="netstandard" />
+    <Reference Include="SideLoader">
+      <HintPath>..\Libraries\SideLoader.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -68,23 +59,40 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="UnityEngine">
+    <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Libraries\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>..\Libraries\UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.UI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Libraries\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CustomKeybindings.cs" />
-    <Compile Include="SortingScript.cs" />
-    <Compile Include="TestScript.cs" />
+    <Compile Include="CustomDurable.cs" />
+    <Compile Include="Hooks\Deployable.cs" />
+    <Compile Include="Hooks\Item.cs" />
+    <Compile Include="Hooks\ItemDetailsDisplay_RefreshDisplay.cs" />
+    <Compile Include="Hooks\Survivor.cs" />
     <Compile Include="WorkInProgress.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CustomKeybindingsBepInEx\CustomKeybindingsBepInEx.csproj">
+      <Project>{78ca7d1b-b8d5-4777-8de7-593778358a47}</Project>
+      <Name>CustomKeybindingsBepInEx</Name>
+      <Private>False</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>XCOPY "$(TargetDir)$(TargetFileName)" "D:\SteamLibrary\steamapps\common\Outward\Mods" /Y</PostBuildEvent>
+    <PostBuildEvent>XCOPY "$(TargetDir)$(TargetFileName)" "D:\SteamLibrary\steamapps\common\Outward\BepInEx\plugins" /Y</PostBuildEvent>
   </PropertyGroup>
 </Project>
