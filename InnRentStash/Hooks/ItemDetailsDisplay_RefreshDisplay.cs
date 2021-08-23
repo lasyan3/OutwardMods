@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine.UI;
 using static AreaManager;
+using static ItemDetailsDisplay;
 
 namespace InnRentStash.Hooks
 {
@@ -28,7 +29,7 @@ namespace InnRentStash.Hooks
                 {
                     int invQty = __instance.LocalCharacter.Inventory.ItemCount(_itemDisplay.RefItem.ItemID);
                     int stashQty = 0;
-                    if (InnRentStash.StashAreaToStashUID.ContainsKey(areaN) && InnRentStash.m_isStashSharing)
+                    if (InnRentStash.StashAreaToStashUID.ContainsKey(areaN) && InnRentStash.Instance.ConfigStashSharing.Value)
                     {
                         TreasureChest stash = (TreasureChest)ItemManager.Instance.GetItem(InnRentStash.StashAreaToStashUID[areaN]);
                         if (stash != null)
@@ -47,40 +48,73 @@ namespace InnRentStash.Hooks
                 if (_itemDisplay.RefItem.Value > 0 && _itemDisplay.RefItem.Weight > 0 && _itemDisplay.RefItem.IsSellable)
                 {
                     List<ItemDetailRowDisplay> m_detailRows = (List<ItemDetailRowDisplay>)AccessTools.Field(typeof(ItemDetailsDisplay), "m_detailRows").GetValue(__instance);
-                    ItemDetailRowDisplay row = (ItemDetailRowDisplay)AccessTools.Method(typeof(ItemDetailsDisplay), "GetRow").Invoke(__instance, new object[] { m_detailRows.Count });
-                    row.SetInfo("Value rate", Math.Round(_itemDisplay.RefItem.Value / _itemDisplay.RefItem.Weight, 2).ToString());
+                    //ItemDetailRowDisplay row = (ItemDetailRowDisplay)AccessTools.Method(typeof(ItemDetailsDisplay), "GetRow").Invoke(__instance, new object[] { m_detailRows.Count });
+                    //row.SetInfo("Value rate", Math.Round(_itemDisplay.RefItem.Value / _itemDisplay.RefItem.Weight, 2).ToString());
                 }
                 #endregion
                 #region Add Durability information
-                if (_itemDisplay.RefItem.IsPerishable && _itemDisplay.RefItem.CurrentDurability > 0)
+                if (_itemDisplay.RefItem.IsPerishable && _itemDisplay.RefItem.CurrentDurability > 0
+                    && !_itemDisplay.RefItem.DisplayedInfos.ToList().Contains(DisplayedInfos.Durability))
                 {
                     List<ItemDetailRowDisplay> m_detailRows = (List<ItemDetailRowDisplay>)AccessTools.Field(typeof(ItemDetailsDisplay), "m_detailRows").GetValue(__instance);
-                    ItemDetailRowDisplay row = (ItemDetailRowDisplay)AccessTools.Method(typeof(ItemDetailsDisplay), "GetRow").Invoke(__instance, new object[] { m_detailRows.Count });
-                    row.SetInfo("Durability", GameTimetoDays(_itemDisplay.RefItem.CurrentDurability / _itemDisplay.RefItem.PerishScript.DepletionRate));
+                    //ItemDetailRowDisplay row = (ItemDetailRowDisplay)AccessTools.Method(typeof(ItemDetailsDisplay), "GetRow").Invoke(__instance, new object[] { m_detailRows.Count });
+                    //row.SetInfo(LocalizationManager.Instance.GetLoc("ItemStat_Durability"), GameTimetoDays(_itemDisplay.RefItem.CurrentDurability / _itemDisplay.RefItem.PerishScript.DepletionRate));
                 }
                 #endregion
             }
             catch (Exception ex)
             {
-                InnRentStash.MyLogger.LogError(ex.Message);
+                //InnRentStash.MyLogger.LogError("RefreshDisplay: " + ex.Message);
+            }
+        }
+
+        [HarmonyPatch(typeof(ItemDetailsDisplay), "RefreshDetail")]
+        public class ItemDetailsDisplay_RefreshDetail
+        {
+            [HarmonyPostfix]
+            public static void RefreshDetail(ItemDetailsDisplay __instance, int _rowIndex, DisplayedInfos _infoType)
+            {
+                try
+                {
+                    if (_infoType != DisplayedInfos.Durability)
+                    {
+                        return;
+                    }
+                    Item m_lastItem = (Item)AccessTools.Field(typeof(ItemDetailsDisplay), "m_lastItem").GetValue(__instance);
+                    if (m_lastItem.IsPerishable && m_lastItem.CurrentDurability > 0)
+                    {
+                        ItemDetailRowDisplay row = (ItemDetailRowDisplay)AccessTools.Method(typeof(ItemDetailsDisplay), "GetRow").Invoke(__instance, new object[] { _rowIndex });
+                        Text m_lblDataName = (Text)AccessTools.Field(typeof(ItemDetailRowDisplay), "m_lblDataName").GetValue(row);
+                        row.SetInfo(m_lblDataName.text, GameTimetoDays(m_lastItem.CurrentDurability / m_lastItem.PerishScript.DepletionRate));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    InnRentStash.MyLogger.LogError("RefreshDetail: " + ex.Message);
+                }
             }
         }
 
         private static string GameTimetoDays(double p_gametime)
         {
             string str = "";
-            int days = (int)p_gametime / 24;
+            int days = (int)(p_gametime / 24);
             if (days > 0) str = $"{days}d, ";
-            int hours = (int)p_gametime % 24;
+            int hours = (int)(p_gametime % 24);
             str += $"{hours}h";
-            if (days == 0 && hours == 0)
+            if (days == 0)
             {
-                int minutes = (int)p_gametime * 60;
-                str = $"{minutes} min";
-                if (minutes == 0)
+                hours = (int)Math.Ceiling(p_gametime % 24);
+                str = $"{hours}h";
+                if (hours <= 1)
                 {
-                    int seconds = (int)p_gametime * 3600;
-                    str = $"{seconds} sec";
+                    int minutes = (int)(p_gametime * 60);
+                    str = $"{minutes} min";
+                    if (minutes == 0)
+                    {
+                        int seconds = (int)(p_gametime * 3600);
+                        str = $"{seconds} sec";
+                    }
                 }
             }
             return str;

@@ -1,7 +1,7 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
+using SideLoader;
 using System;
-using static CustomKeybindings;
 
 namespace SaveSystemReworked
 {
@@ -9,11 +9,12 @@ namespace SaveSystemReworked
     [BepInPlugin(ID, NAME, VERSION)]
     public class SaveSystemReworked : BaseUnityPlugin
     {
-        const string ID = "com.lasyan3.savesystemreworked";
+        const string ID = "fr.lasyan3.savesystemreworked";
         const string NAME = "SaveSystemReworked";
         const string VERSION = "1.0.0";
 
         public static ManualLogSource MyLogger = BepInEx.Logging.Logger.CreateLogSource(NAME);
+        public static bool IsQuickSave = false;
 
         internal void Awake()
         {
@@ -22,8 +23,8 @@ namespace SaveSystemReworked
                 var harmony = new HarmonyLib.Harmony(ID);
                 harmony.PatchAll();
 
-                CustomKeybindings.AddAction("QuickSave", KeybindingsCategory.Actions, ControlType.Both, 5);
-                CustomKeybindings.AddAction("QuickLoad", KeybindingsCategory.Actions, ControlType.Both, 5);
+                CustomKeybindings.AddAction("QuickSave", KeybindingsCategory.CustomKeybindings, ControlType.Keyboard);
+                //CustomKeybindings.AddAction("QuickLoad", KeybindingsCategory.Actions, ControlType.Both, 5);
 
                 MyLogger.LogDebug("Awaken");
             }
@@ -33,6 +34,24 @@ namespace SaveSystemReworked
             }
         }
 
+        /*
+         * NetworkLevelLoader
+         * 
+         * CurrentSaveInstance
+         *   CharacterSaveInstanceHolder.ApplyLoadedSaveToChar
+         *     SaveManager.LocalCharStarted
+         *       NetworkLevelLoader.LocalCharStarted
+         *         Character.ProcessInit
+         *   CharacterSaveInstanceHolder.ApplyEnvironment
+         *     SaveManager.LoadEnvironment
+         *       NetworkLevelLoader.MidLoadLevel
+         *   CharacterSaveInstanceHolder.ApplyWorld
+         *     SaveManager.LoadWorld
+         *       NetworkLevelLoader.MidLoadLevel
+         *   CharacterSaveInstanceHolder.ApplyLegacy
+         *     SaveManager.LoadLegacyChestData
+         *       NetworkLevelLoader.MidLoadLevel
+         */
 
         /*private IEnumerator FinalizeRestart(Character selfChar)
         {

@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using SideLoader;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,10 +23,7 @@ namespace SaveSystemReworked
 
             try
             {
-                UID charUID = __instance.Character.UID;
-                int playerID = __instance.Character.OwnerPlayerSys.PlayerID;
-
-                if (CustomKeybindings.m_playerInputManager[playerID].GetButtonDown("QuickSave"))
+                if (CustomKeybindings.GetKeyDown("QuickSave"))
                 {
                     SaveSystemReworked.MyLogger.LogDebug("QuickSave");
                     SaveManager.Instance.Save(true, true);
@@ -36,17 +34,17 @@ namespace SaveSystemReworked
                         Global.AudioManager.PlaySound(GlobalAudioManager.Sounds.UI_NEWGAME_SelectSave);
                     }
                 }
-                if (CustomKeybindings.m_playerInputManager[playerID].GetButtonDown("QuickLoad"))
-                {
-                    /*SaveSystemReworked.MyLogger.LogDebug("QuickLoad");
-                    if (QuickSave == null)
-                    {
-                        QuickSave = SaveManager.Instance.ChooseCharacterSaveInstance(charUID, 0);
-                    }
-                    SplitScreenManager.Instance.LocalPlayers[0].SetChosenSave(QuickSave);
+                //if (CustomKeybindings.GetKeyDown("QuickLoad"))
+                //{
+                //    SaveSystemReworked.MyLogger.LogDebug("QuickLoad");
+                //    if (QuickSave == null)
+                //    {
+                //        QuickSave = SaveManager.Instance.ChooseCharacterSaveInstance(charUID, 0);
+                //    }
+                //    SplitScreenManager.Instance.LocalPlayers[0].SetChosenSave(QuickSave);
 
-                    QuickSave.ApplyLoadedSaveToChar(__instance.Character);*/
-                }
+                //    QuickSave.ApplyLoadedSaveToChar(__instance.Character);
+                //}
             }
             catch (Exception ex)
             {

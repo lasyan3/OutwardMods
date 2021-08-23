@@ -53,7 +53,7 @@ namespace OutwardMods
             }
             catch (Exception ex)
             {
-                SoroboreanTravelAgency.MyLogger.LogError(ex.Message);
+                SoroboreanTravelAgency.Instance.MyLogger.LogError(ex.Message);
             }
             /*CampingEventManager.Instance.PrepareDungeonCampEvent
             string text3 = CampingEventManager.Instance.TryGetCampingEvent();

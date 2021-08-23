@@ -12,7 +12,7 @@ namespace Hooks
         [HarmonyPostfix]
         public static void StartLoading(LocalizationManager __instance)
         {
-            MyLogger.LogDebug("StartLoading");
+            //MyLogger.LogDebug("StartLoading");
             // Nab the localization dictionary that's used for keybind localization
             Dictionary<string, string> m_generalLocalization = (Dictionary<string, string>)__instance.GetType().GetField("m_generalLocalization", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(__instance);
 

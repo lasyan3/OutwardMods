@@ -20,17 +20,13 @@ namespace OutwardMods.Hooks
         {
             try
             {
+                //SoroboreanTravelAgency.Instance.MyLogger.LogDebug(__instance.ActorLocKey);
                 Character character = CharacterManager.Instance.GetCharacter(CharacterManager.Instance.PlayerCharacters.Values[0]);
                 if (character == null)
                 {
                     return;
                 }
-                if (!string.IsNullOrEmpty(__instance.ActorLocKey))
-                {
-                    //OLogger.Log($"{self.ActorLocKey}");
-                }
-                // TODO: travel with red merchant
-                if (SoroboreanTravelAgency.DialogIsSet)
+                if (StoreManager.Instance.IsDlcInstalled(OTWStoreAPI.DLCs.Soroboreans))
                 {
                     return;
                 }
@@ -39,7 +35,7 @@ namespace OutwardMods.Hooks
                 {
                     return;
                 }
-                SoroboreanTravelAgency.TravelDayCost = SoroboreanTravelAgency.Settings.TravelDayCost; // 80 - 100 - 120
+                SoroboreanTravelAgency.TravelDayCost = (int)(float)SoroboreanTravelAgency.Instance.MyConfig.GetValue("Travel Day Cost"); // 80 - 100 - 120
                 if (areaN == AreaEnum.Levant) // TODO: check quest "Blood under the Sun"
                 {
                     SoroboreanTravelAgency.TravelDayCost = (int)(SoroboreanTravelAgency.TravelDayCost * 1.75); // 140 - 175 - 210
@@ -50,33 +46,50 @@ namespace OutwardMods.Hooks
                     var graphOwner = __instance.NPCDialogue.DialogueController;
                     var graph = (Graph)graphOwner.GetType().BaseType.GetField("_graph", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(graphOwner as GraphOwner<DialogueTreeExt>);
                     var nodes = typeof(Graph).GetField("_nodes", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(graph as Graph) as List<Node>;
-                    var firstNode = nodes.First(n => n.GetType().Name == "MultipleChoiceNodeExt");
+                    var firstNode = (nodes.First(n => n.GetType().Name == "MultipleChoiceNodeExt") as MultipleChoiceNodeExt);
 
-                    int cnt = (firstNode as MultipleChoiceNodeExt).availableChoices.Count - 2;
-                    (firstNode as MultipleChoiceNodeExt).availableChoices.Insert(cnt, new MultipleChoiceNodeExt.Choice(new Statement("I want to travel, please.")));
+                    if (SoroboreanTravelAgency.DialogIsSet)
+                    {
+                        foreach (var node in graph.allNodes.Where(n => n.tag == "SoroboreanTravelAgency").ToList())
+                        {
+                            graph.RemoveNode(node);
+                        }
+                        firstNode.availableChoices.RemoveAll(c => c.statement.meta == "TRAVEL");
+                    }
+
+                    int cnt = firstNode.availableChoices.Count - 2;
+                    firstNode.availableChoices.Insert(cnt, new MultipleChoiceNodeExt.Choice(new Statement("I want to travel, please.", GlobalAudioManager.Sounds.BGM_Empty, "TRAVEL")));
                     StatementNodeExt nStart = graph.AddNode<StatementNodeExt>();
+                    nStart.tag = "SoroboreanTravelAgency";
                     nStart.statement = new Statement($"Where do you want to go?");
                     nStart.SetActorName(__instance.ActorLocKey);
 
                     StatementNodeExt nResultMoneyBad = graph.AddNode<StatementNodeExt>();
+                    nResultMoneyBad.tag = "SoroboreanTravelAgency";
                     nResultMoneyBad.statement = new Statement("Sorry, you don't have enough silver. Come back when you can afford it!");
                     nResultMoneyBad.SetActorName(__instance.ActorLocKey);
                     StatementNodeExt nResultRationsBad = graph.AddNode<StatementNodeExt>();
+                    nResultRationsBad.tag = "SoroboreanTravelAgency";
                     nResultRationsBad.statement = new Statement("Sorry, you don't have enough rations to travel this far.");
                     nResultRationsBad.SetActorName(__instance.ActorLocKey);
                     StatementNodeExt nCancel = graph.AddNode<StatementNodeExt>();
+                    nCancel.tag = "SoroboreanTravelAgency";
                     nCancel.statement = new Statement("See you soon!");
                     nCancel.SetActorName(__instance.ActorLocKey);
                     FinishNode nFinish = graph.AddNode<FinishNode>();
+                    nFinish.tag = "SoroboreanTravelAgency";
                     StatementNodeExt nNoDestination = graph.AddNode<StatementNodeExt>();
+                    nNoDestination.tag = "SoroboreanTravelAgency";
                     nNoDestination.statement = new Statement("Sorry, you have not discovered any other town... You can only travel to places you visited at least once!");
                     nNoDestination.SetActorName(__instance.ActorLocKey);
 
                     bool hasEntry = false;
                     MultipleChoiceNodeExt nChoose = graph.AddNode<MultipleChoiceNodeExt>();
+                    nChoose.tag = "SoroboreanTravelAgency";
                     foreach (StrTravel travel in SoroboreanTravelAgency.StartAreaToTravel[areaN])
                     {
-                        if (!QuestEventManager.Instance.HasQuestEvent(SoroboreanTravelAgency.AreaToQuestEvent[travel.TargetArea]))
+                        //if (!QuestEventManager.Instance.HasQuestEvent(SoroboreanTravelAgency.AreaToQuestEvent[travel.TargetArea]))
+                        if (!(bool)SoroboreanTravelAgency.Instance.MyConfig.GetValue(travel.TargetArea + "Visited"))
                         {
                             continue; // This town has not been visited yet
                         }
@@ -87,25 +100,37 @@ namespace OutwardMods.Hooks
                         {
                             areaLabel = "Cierzo";
                         }
-                        nChoose.availableChoices.Add(new MultipleChoiceNodeExt.Choice(new Statement($"{areaLabel} ({travel.DurationDays * SoroboreanTravelAgency.TravelDayCost} silver and {travel.DurationDays} rations).")));
+                        int rationsCost = travel.DurationDays;
+                        int moneyCost = travel.DurationDays * SoroboreanTravelAgency.TravelDayCost;
+                        string msgCost = $"{areaLabel} ({moneyCost} silver and {rationsCost} rations).";
+                        if (travel.DurationDays == 0)
+                        {
+                            rationsCost = 0;
+                            moneyCost = SoroboreanTravelAgency.TravelDayCost;
+                            msgCost = $"{areaLabel} ({moneyCost} silver).";
+                        }
+                        nChoose.availableChoices.Add(new MultipleChoiceNodeExt.Choice(new Statement(msgCost)));
 
                         ConditionNode nCheckMoney = graph.AddNode<ConditionNode>();
+                        nCheckMoney.tag = "SoroboreanTravelAgency";
                         nCheckMoney.condition = new Condition_OwnsItem()
                         {
                             character = character,
                             item = new ItemReference { ItemID = 9000010 },
-                            minAmount = travel.DurationDays * SoroboreanTravelAgency.TravelDayCost
+                            minAmount = moneyCost
                         };
                         ConditionNode nCheckRations = graph.AddNode<ConditionNode>();
+                        nCheckRations.tag = "SoroboreanTravelAgency";
                         nCheckRations.condition = new Condition_OwnsItem()
                         {
                             character = character,
                             item = new ItemReference { ItemID = 4100550 }, // Travel Ration
-                            minAmount = travel.DurationDays
+                            minAmount = rationsCost
                         };
                         graph.ConnectNodes(nChoose, nCheckMoney);
 
                         ActionNode nWishRent = graph.AddNode<ActionNode>();
+                        nWishRent.tag = "SoroboreanTravelAgency";
                         ActionList actions = new ActionList();
                         actions.AddAction(new NodeCanvas.Tasks.Actions.PlaySound()
                         {
@@ -117,7 +142,7 @@ namespace OutwardMods.Hooks
                         });
                         actions.AddAction(new SetTravelArea()
                         {
-                            Script = SoroboreanTravelAgency.This,
+                            Script = SoroboreanTravelAgency.Instance,
                             TargetArea = travel.TargetArea
                         });
                         actions.AddAction(new AreaSwitchPlayersTime()
@@ -130,7 +155,7 @@ namespace OutwardMods.Hooks
                         {
                             fromCharacter = new BBParameter<Character>(character),
                             Items = new List<BBParameter<ItemReference>>() { new ItemReference { ItemID = 9000010 }, new ItemReference { ItemID = 4100550 } },
-                            Amount = new List<BBParameter<int>>() { new BBParameter<int>(travel.DurationDays * SoroboreanTravelAgency.TravelDayCost), new BBParameter<int>(travel.DurationDays) },
+                            Amount = new List<BBParameter<int>>() { new BBParameter<int>(moneyCost), new BBParameter<int>(rationsCost) },
                         });
                         nWishRent.action = actions;
                         graph.ConnectNodes(nCheckMoney, nCheckRations);
@@ -161,7 +186,7 @@ namespace OutwardMods.Hooks
             }
             catch (Exception ex)
             {
-                SoroboreanTravelAgency.MyLogger.LogError(ex.Message);
+                SoroboreanTravelAgency.Instance.MyLogger.LogError(ex.Message);
             }
         }
     }

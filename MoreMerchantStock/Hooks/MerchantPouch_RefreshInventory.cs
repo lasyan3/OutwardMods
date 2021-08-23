@@ -20,7 +20,7 @@ namespace MoreMerchantStock
                 {
                     FieldInfo nextRefreshTime = AccessTools.Field(typeof(MerchantPouch), "m_nextRefreshTime");
                     nextRefreshTime.SetValue(__instance, EnvironmentConditions.GameTime - 1);
-                    MoreMerchantStock.MyLogger.LogDebug($"nextRefreshTime={nextRefreshTime}");
+                    //MoreMerchantStock.MyLogger.LogDebug($"nextRefreshTime={nextRefreshTime}");
                 }
             }
             catch (Exception ex)

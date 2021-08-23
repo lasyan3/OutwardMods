@@ -12,7 +12,7 @@ namespace Hooks
         [HarmonyPrefix]
         public static bool InitSections( ControllerMap _controllerMap)
         {
-            MyLogger.LogDebug("InitSections");
+            //MyLogger.LogDebug("InitSections");
             // Loop through our custom actions we added via Rewired
             foreach (int myActionId in CustomKeybindings.myCustomActionIds.Keys)
             {

@@ -25,7 +25,9 @@ namespace OutwardMods.Hooks
                         || aqe.Key == AreaEnum.Levant && QuestEventManager.Instance.CurrentQuestEvents.Any(e => e.Name == "PlayerHouse_Levant_HouseAvailable" || e.Name == "Faction_HeroicKingdom")
                         ))
                     {
+                        SoroboreanTravelAgency.Instance.MyLogger.LogDebug("AddEvent=" + aqe.Key);
                         QuestEventManager.Instance.AddEvent(SoroboreanTravelAgency.AreaToQuestEvent[aqe.Key]);
+                        SoroboreanTravelAgency.Instance.MyConfig.SetValue(aqe.Key + "Visited", true);
                     }
                 }
 
@@ -67,7 +69,7 @@ namespace OutwardMods.Hooks
             }
             catch (Exception ex)
             {
-                SoroboreanTravelAgency.MyLogger.LogError(ex.Message);
+                SoroboreanTravelAgency.Instance.MyLogger.LogError(ex.Message);
             }
         }
     }

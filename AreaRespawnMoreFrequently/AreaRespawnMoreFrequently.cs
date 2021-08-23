@@ -69,8 +69,6 @@ public class AreaRespawnMoreFrequently : PartialityMod
             On.HideObjectManager.GameObjectList.UpdateVisibility += GameObjectList_UpdateVisibility;
             On.QuestEventAreaCondition.CheckIsValid += QuestEventAreaCondition_CheckIsValid;
             On.QuestRelated.ItemParentChanged += QuestRelated_ItemParentChanged;*/
-
-            OLogger.Log("AreaRespawnMoreFrequently is enabled");
         }
         catch (Exception ex)
         {
@@ -180,25 +178,40 @@ public class AreaRespawnMoreFrequently : PartialityMod
 
     private void EnvironmentSave_ApplyData(On.EnvironmentSave.orig_ApplyData orig, EnvironmentSave self)
     {
+        bool resetEnemies = false;
+        AreaManager.AreaEnum areaN = (AreaManager.AreaEnum)AreaManager.Instance.GetAreaIndexFromSceneName(self.AreaName);
+        if (areaN == AreaManager.AreaEnum.CierzoOutside ||
+            areaN == AreaManager.AreaEnum.Abrassar ||
+            areaN == AreaManager.AreaEnum.Emercar ||
+            areaN == AreaManager.AreaEnum.HallowedMarsh)
+        {
+            resetEnemies = true;
+        }
+
         float num = (float)(self.GameTime - EnvironmentConditions.GameTime);
         if (num > 0f)
         {
             EnvironmentConditions.GameTime = self.GameTime;
         }
-        /*ItemManager.Instance.LoadItems(self.ItemList, _clearAllItems: true);
-        SceneInteractionManager.Instance.LoadInteractableStates(self.InteractionActivatorList);
-        SceneInteractionManager.Instance.LoadDropTableStates(self.DropTablesList);
+
         if (!AreaManager.Instance.IsAreaExpired(self.AreaName, num))
         {
+            ItemManager.Instance.LoadItems(self.ItemList, _clearAllItems: true);
             CharacterManager.Instance.LoadAiCharactersFromSave(self.CharList.ToArray());
+            SceneInteractionManager.Instance.LoadInteractableStates(self.InteractionActivatorList);
+            SceneInteractionManager.Instance.LoadDropTableStates(self.DropTablesList);
             CampingEventManager.Instance.LoadEventTableData(self.CampingEventSaveData);
             DefeatScenariosManager.Instance.LoadSaveData(self.DefeatScenarioSaveData);
             EnvironmentConditions.Instance.LoadSoulSpots(self.UsedSoulSpots);
             MapDisplay.Instance.Load(self.MapSaveData);
-        }*/
-        OLogger.Log($"Enter {self.AreaName} at {GameTimetoDays(EnvironmentConditions.GameTime)}");
-        OLogger.Log($" > Last visit was {GameTimetoDays(self.GameTime)})");
-        orig.Invoke(self);
+        }
+        else if (resetEnemies)
+        {
+            CharacterManager.Instance.LoadAiCharactersFromSave(self.CharList.ToArray());
+        }
+        //OLogger.Log($"Enter {self.AreaName} at {GameTimetoDays(EnvironmentConditions.GameTime)}");
+        //OLogger.Log($" > Last visit was {GameTimetoDays(self.GameTime)})");
+        //orig.Invoke(self);
         //ItemManager.Instance.LoadItems(self.ItemList, _clearAllItems: true);
         //SceneInteractionManager.Instance.LoadInteractableStates(self.InteractionActivatorList);
         //SceneInteractionManager.Instance.LoadDropTableStates(self.DropTablesList);
@@ -224,10 +237,10 @@ public class AreaRespawnMoreFrequently : PartialityMod
 
     private bool AreaManager_IsAreaExpired(On.AreaManager.orig_IsAreaExpired orig, AreaManager self, string _areaName, float _diff)
     {
-        OLogger.Log($"IsAreaExpired {_areaName}={GameTimetoDays(-_diff)})");
-        return orig(self, _areaName, _diff);
+        //OLogger.Log($"IsAreaExpired {_areaName}={GameTimetoDays(-_diff)})");
+        //return orig(self, _areaName, _diff);
         Area areaFromSceneName = self.GetAreaFromSceneName(_areaName);
-        AreaManager.AreaEnum areaN = (AreaManager.AreaEnum)self.GetAreaIndexFromSceneName(_areaName);
+        /*AreaManager.AreaEnum areaN = (AreaManager.AreaEnum)self.GetAreaIndexFromSceneName(_areaName);
         if (areaN != AreaManager.AreaEnum.CierzoOutside &&
             areaN != AreaManager.AreaEnum.Abrassar &&
             areaN != AreaManager.AreaEnum.Emercar &&
@@ -235,17 +248,17 @@ public class AreaRespawnMoreFrequently : PartialityMod
         {
             SendNotificationToAllPlayers($"{areaN} NEVER expire");
             return false;
-        }
+        }*/
         float _resetTime = areaFromSceneName.ResetTime == 168f ? RESPAWN_TIME : areaFromSceneName.ResetTime;
         if (areaFromSceneName != null && !self.PermenantAreas.Contains((AreaManager.AreaEnum)areaFromSceneName.ID) && 0f - _diff > _resetTime)
         {
-            SendNotificationToAllPlayers($"{areaN} RESPAWNED ({GameTimetoDays(-_diff)})");
+            SendNotificationToAllPlayers($"RESPAWNED ({GameTimetoDays(-_diff)})");
             return true;
         }
-        if (_diff < 0)
+        /*if (_diff < 0)
         {
             SendNotificationToAllPlayers($"{areaN} has not expired yet ({GameTimetoDays(-_diff)})");
-        }
+        }*/
         /*else
         {
             SendNotificationToAllPlayers($"{areaN} has not expired yet");

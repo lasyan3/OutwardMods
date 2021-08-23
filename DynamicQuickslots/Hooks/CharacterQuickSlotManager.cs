@@ -9,7 +9,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using static Item;
 
-namespace DynamicQuickslots.Hooks
+namespace EraserElixir.Hooks
 {
     public class CustomQuickSlot
     {
@@ -22,6 +22,9 @@ namespace DynamicQuickslots.Hooks
         }
     }
 
+    /// <summary>
+    /// Apply QuickSlotSet if found
+    /// </summary>
     [HarmonyPatch(typeof(CharacterQuickSlotManager), "QuickSlotInput")]
     public class SelectQuickSlotSet
     {
@@ -35,19 +38,15 @@ namespace DynamicQuickslots.Hooks
                 var ext = m_quickSlots[_index]?.RegisteredItem?.GetComponent<QuickSlotSetExt>();
                 if (m_quickSlots[_index] != null && ext != null && ext.Slots.Count > 0)
                 {
-                    //DynamicQuickslots.Instance.MyLogger.LogDebug($"SWITCH from {m_quickSlots[_index].ItemID}");
                     foreach (var qs in ext.Slots)
                     {
-                        //DynamicQuickslots.Instance.MyLogger.LogDebug($" > {qs.Index}: {qs.ItemID}");
                         Item skill = m_character.Inventory.SkillKnowledge.GetItemFromItemID(qs.ItemID);
                         if (qs.ItemID == -1)
                         {
-                            //DynamicQuickslots.Instance.MyLogger.LogDebug($" > {qs.Index}: -");
                             //__instance.ClearQuickSlot(qs.Index);
                         }
                         else if (skill != null)
                         {
-                            //DynamicQuickslots.Instance.MyLogger.LogDebug($" > {qs.Index}: {skill.name}");
                             __instance.SetQuickSlot(qs.Index, skill);
                         }
                         else
@@ -68,7 +67,6 @@ namespace DynamicQuickslots.Hooks
                                     it = ResourcesPrefabManager.Instance.GetItemPrefab(qs.ItemID);
                                 }
                             }
-                            //DynamicQuickslots.Instance.MyLogger.LogDebug($" > {qs.Index}: {it.name}");
                             __instance.SetQuickSlot(qs.Index, it);
                         }
                     }

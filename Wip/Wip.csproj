@@ -76,10 +76,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CustomDurable.cs" />
-    <Compile Include="Hooks\Deployable.cs" />
-    <Compile Include="Hooks\Item.cs" />
-    <Compile Include="Hooks\ItemDetailsDisplay_RefreshDisplay.cs" />
-    <Compile Include="Hooks\Survivor.cs" />
+    <Compile Include="Hooks\RepairEquipmentAfterRest.cs" />
+    <Compile Include="Hooks\DisableNewFlag.cs" />
+    <Compile Include="Hooks\LightsOnNpc.cs" />
+    <Compile Include="Hooks\RecipesReorder.cs" />
     <Compile Include="WorkInProgress.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

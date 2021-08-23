@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace DynamicQuickslots.Hooks
+namespace EraserElixir.Hooks
 {
     enum EnCustomInventoryActions
     {
@@ -105,6 +105,7 @@ namespace DynamicQuickslots.Hooks
                                 ItemID = qs.ItemID
                             });
                         }
+                        __instance.CharacterUI.ShowInfoNotification($"QuickSlotSet saved!");
                     }
                 } else if (_actionID == (int)EnCustomInventoryActions.DeleteQuickslotSet)
                 {
@@ -115,6 +116,7 @@ namespace DynamicQuickslots.Hooks
                     if (ext)
                     {
                         ext.Slots.Clear();
+                        __instance.CharacterUI.ShowInfoNotification($"QuickSlotSet removed!");
                     }
                 }
             }

@@ -1,5 +1,6 @@
 ﻿
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
 using System;
@@ -7,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using static AreaManager;
-using static CustomKeybindings;
 
 namespace InnRentStash
 {
@@ -17,21 +17,20 @@ namespace InnRentStash
         public string NpcName;
         public Vector3 StashPosition;
         public Quaternion StashRotation;
-        public int RentPrice;
-        public int RentDuration;
         public string PlayerHouseQuestEventUID;
     }
     [BepInPlugin(ID, NAME, VERSION)]
     public class InnRentStash : BaseUnityPlugin
     {
-        const string ID = "com.lasyan3.innrentstash";
-        const string NAME = "InnRentStash";
-        const string VERSION = "1.1.1";
+        const string ID = "fr.lasyan3.InnRentStash";
+        const string NAME = "Inn Rent Stash";
+        const string VERSION = "1.1.4";
+        const bool DEBUG = false;
 
         //private string m_currentArea;
-        public static bool m_dialogIsSet;
-        public static TreasureChest m_currentStash;
-        public static bool m_isStashSharing = true;
+        //public static bool DialogIsSet;
+        public static TreasureChest CurrentStash;
+        //public static bool IsStashSharing;
         public static readonly Dictionary<AreaEnum, string> StashAreaToStashUID = new Dictionary<AreaEnum, string>
         {
             {
@@ -49,6 +48,10 @@ namespace InnRentStash
             {
                 AreaEnum.Monsoon,
                 "ImqRiGAT80aE2WtUHfdcMw"
+            },
+            {
+                AreaEnum.Harmattan,
+                "ImqRiGAT80aE2WtUHfdcMw"
             }
         };
         public static readonly Dictionary<AreaEnum, StrRent> StashAreaToQuestEvent = new Dictionary<AreaEnum, StrRent>
@@ -59,8 +62,6 @@ namespace InnRentStash
                     NpcName = "name_unpc_berginnkeeper_01",
                     StashPosition = new Vector3(-366.3f, -1500.0f, 764.9f),
                     StashRotation = new Quaternion(),
-                    RentPrice = 50,
-                    RentDuration = 168,
                     QuestEvent = new QuestEventSignature("stash_berg")
                     {
                         EventName = "Inn_Berg_StashRent",
@@ -74,8 +75,6 @@ namespace InnRentStash
                     NpcName = "name_unpc_levantinnkeeper_01",
                     StashPosition = new Vector3(-360.2f, -1509.5f, 565.4f),
                     StashRotation = Quaternion.AngleAxis(-65.0f, Vector3.up),
-                    RentPrice = 50,
-                    RentDuration = 168,
                     QuestEvent = new QuestEventSignature("stash_levant")
                     {
                         EventName = "Inn_Levant_StashRent",
@@ -89,8 +88,6 @@ namespace InnRentStash
                     NpcName = "name_unpc_monsooninnkeeper_01",
                     StashPosition = new Vector3(-372.0f, -1500.0f, 557.7f),
                     StashRotation = new Quaternion(),
-                    RentPrice = 50,
-                    RentDuration = 168,
                     QuestEvent = new QuestEventSignature("stash_monsoon")
                     {
                         EventName = "Inn_Monsoon_StashRent",
@@ -99,23 +96,47 @@ namespace InnRentStash
                         //IsHideEvent = false,
                     },
                 }
+           },
+            {
+                AreaEnum.Harmattan,
+                new StrRent {
+                    NpcName = "name_merchant_soroborpoorinn_01",
+                    StashPosition = new Vector3(-170.0f, -1522.4f, 596.4f),
+                    StashRotation = Quaternion.AngleAxis(-90.0f, Vector3.up),
+                    QuestEvent = new QuestEventSignature("stash_harmattan")
+                    {
+                        EventName = "Inn_Harmattan_StashRent",
+                        IsTimedEvent = true,
+                        //Savable = true,
+                        //IsHideEvent = false,
+                    },
+                }
            }
         };
 
+        public static InnRentStash Instance;
+
         public static ManualLogSource MyLogger = BepInEx.Logging.Logger.CreateLogSource(NAME);
+
+        public ConfigEntry<int> ConfigRentDuration;
+        public ConfigEntry<int> ConfigRentPrice;
+        public ConfigEntry<bool> ConfigStashSharing;
 
         internal void Awake()
         {
             try
             {
+                Instance = this;
                 var harmony = new Harmony(ID);
                 harmony.PatchAll();
-                CustomKeybindings.AddAction("StashSharing", KeybindingsCategory.Actions, ControlType.Both, 5);
-                MyLogger.LogDebug("Awaken");
+                ConfigRentDuration = Config.Bind("General", "RentDuration", 7, new ConfigDescription("Duration of the rent (in days)", new AcceptableValueRange<int>(1, 100), new ConfigurationManagerAttributes { ShowRangeAsPercent = false }));
+                ConfigRentPrice = Config.Bind("General", "RentPrice", 50, new ConfigDescription("Price of the rent", new AcceptableValueRange<int>(10, 500)));
+                ConfigStashSharing = Config.Bind("General", "StashSharing", true, new ConfigDescription("Items in the stash are available for crafting"));
+                if (DEBUG) MyLogger.LogDebug("Awaken");
             }
             catch (Exception ex)
             {
-                MyLogger.LogError(ex.Message);
+                MyLogger.LogError("Awake:" + ex.Message);
             }
         }
 
@@ -124,22 +145,22 @@ namespace InnRentStash
             try
             {
                 AreaEnum areaN = (AreaEnum)AreaManager.Instance.GetAreaIndexFromSceneName(SceneManagerHelper.ActiveSceneName);
-                MyLogger.LogDebug($"CheckRentStatus={areaN}");
+                if (DEBUG) MyLogger.LogDebug($"CheckRentStatus={areaN}");
                 if (!CheckStash())
                 {
                     return;
                 }
                 Character character = CharacterManager.Instance.GetCharacter(CharacterManager.Instance.PlayerCharacters.Values[0]);
-                m_currentStash = (TreasureChest)ItemManager.Instance.GetItem(StashAreaToStashUID[areaN]);
-                if (!StashAreaToStashUID.Values.Contains(m_currentStash.UID))
+                CurrentStash = (TreasureChest)ItemManager.Instance.GetItem(StashAreaToStashUID[areaN]);
+                if (!StashAreaToStashUID.Values.Contains(CurrentStash.UID))
                 {
-                    m_currentStash = null;
-                    MyLogger.LogDebug($" > Unknown stash");
+                    CurrentStash = null;
+                    if (DEBUG) MyLogger.LogDebug($" > Unknown stash");
                     return;
                 }
-                if (m_currentStash == null)
+                if (CurrentStash == null)
                 {
-                    MyLogger.LogDebug($" > NullStash");
+                    if (DEBUG) MyLogger.LogDebug($" > NullStash");
                     return;
                 }
 
@@ -149,7 +170,7 @@ namespace InnRentStash
                 {
                     if (QuestEventManager.Instance.CurrentQuestEvents.Count(q => q.Name == $"General_NotLighthouseOwner") > 0)
                     {
-                        m_currentStash = null;
+                        CurrentStash = null;
                     }
                     return;
                 }
@@ -157,7 +178,7 @@ namespace InnRentStash
                 if (QuestEventManager.Instance.CurrentQuestEvents.Count(q => q.Name == $"PlayerHouse_{areaN}_HouseAvailable") > 0)
                 {
                     // House has been bought here, cancel rent event if present
-                    MyLogger.LogDebug(" > House bought here");
+                    if (DEBUG) MyLogger.LogDebug(" > House bought here");
                     if (QuestEventManager.Instance.HasQuestEvent(StashAreaToQuestEvent[areaN].QuestEvent))
                     {
                         QuestEventManager.Instance.RemoveEvent(StashAreaToQuestEvent[areaN].QuestEvent.EventUID);
@@ -168,44 +189,44 @@ namespace InnRentStash
                 #region Move stash to inn
                 Vector3 newPos = StashAreaToQuestEvent[areaN].StashPosition;
                 Quaternion newRot = StashAreaToQuestEvent[areaN].StashRotation;
-                m_currentStash.transform.SetPositionAndRotation(newPos, newRot);
+                CurrentStash.transform.SetPositionAndRotation(newPos, newRot);
                 //ItemVisual iv2 = ItemManager.GetVisuals(m_currentStash.ItemID);
                 //ItemVisual iv2 = ItemManager.GetVisuals(m_currentStash);
-                Transform transform = UnityEngine.Object.Instantiate(m_currentStash.VisualPrefab);
+                Transform transform = UnityEngine.Object.Instantiate(CurrentStash.GetItemVisual());
                 ItemVisual iv2 = transform.GetComponent<ItemVisual>();
                 //ItemVisual iv2 = UnityEngine.Object.Instantiate(m_currentStash.LoadedVisual);
-                iv2.ItemID = m_currentStash.ItemID;
+                iv2.ItemID = CurrentStash.ItemID;
                 //ItemVisual iv2 = m_currentStash.LoadedVisual;
                 iv2.transform.SetPositionAndRotation(newPos, newRot);
                 #endregion
 
-                m_currentStash.SetCanInteract(false);
+                CurrentStash.SetCanInteract(false);
                 if (QuestEventManager.Instance.HasQuestEvent(StashAreaToQuestEvent[areaN].QuestEvent))
                 {
-                    if (QuestEventManager.Instance.CheckEventExpire(StashAreaToQuestEvent[areaN].QuestEvent.EventUID, StashAreaToQuestEvent[areaN].RentDuration))
+                    if (QuestEventManager.Instance.CheckEventExpire(StashAreaToQuestEvent[areaN].QuestEvent.EventUID, Instance.ConfigRentDuration.Value * 24))
                     {
                         //m_notification = $"Rent has expired!";
                         character.CharacterUI.SmallNotificationPanel.ShowNotification("Rent has expired!", 8f);
                         QuestEventManager.Instance.RemoveEvent(StashAreaToQuestEvent[areaN].QuestEvent.EventUID);
-                        MyLogger.LogDebug(" > Rent expired!");
+                        if (DEBUG) MyLogger.LogDebug(" > Rent expired!");
                     }
                     else
                     {
                         //m_notification = "Rent ongoing";
                         character.CharacterUI.SmallNotificationPanel.ShowNotification("Rent ongoing", 8f);
-                        m_currentStash.SetCanInteract(true);
-                        MyLogger.LogDebug(" > Rent still valid");
+                        CurrentStash.SetCanInteract(true);
+                        if (DEBUG) MyLogger.LogDebug(" > Rent still valid");
                     }
                 }
                 else
                 {
-                    MyLogger.LogDebug($" > NoQuestEvent");
+                    if (DEBUG) MyLogger.LogDebug($" > NoQuestEvent");
                 }
 
             }
             catch (Exception ex)
             {
-                MyLogger.LogError(ex.Message);
+                MyLogger.LogError("CheckRentStatus: " + ex.Message);
             }
         }
 
@@ -214,18 +235,18 @@ namespace InnRentStash
             AreaEnum areaN = (AreaEnum)AreaManager.Instance.GetAreaIndexFromSceneName(SceneManagerHelper.ActiveSceneName);
             if (!StashAreaToStashUID.Keys.Contains(areaN))
             {
-                MyLogger.LogDebug($" > Unknown area");
+                if (DEBUG) MyLogger.LogDebug($" > Unknown area");
                 return false;
             }
 
             if (CharacterManager.Instance.PlayerCharacters.Count == 0)
             {
-                MyLogger.LogDebug($" > PlayerCharacters=0");
+                if (DEBUG) MyLogger.LogDebug($" > PlayerCharacters=0");
                 return false;
             }
             if (CharacterManager.Instance.PlayerCharacters.Values.Count == 0)
             {
-                MyLogger.LogDebug($" > PlayerCharacters.Values=0");
+                if (DEBUG) MyLogger.LogDebug($" > PlayerCharacters.Values=0");
                 return false;
             }
             return true;

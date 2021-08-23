@@ -12,9 +12,31 @@ using WorkInProgress.Hooks;
 
 namespace WorkInProgress
 {
+    public enum eItemIDs
+    {
+        TentKit = 5000010,
+        Tent = 5000011,
+        BedrollKit = 5000020,
+        Bedroll = 5000021,
+        CamoTentKit = 5000030,
+        CamoTent = 5000031,
+        FurTentKit = 5000040,
+        FurTent = 5000041,
+        LuxuryTentKit = 5000050,
+        LuxuryTent = 5000051,
+        MageTentKit = 5000060,
+        MageTent = 5000061,
+        CleanWater = 5600000,
+        RiverWater = 5600001,
+        RancidWater = 5600003,
+        FlintAndSteel = 5600010,
+        Waterskin = 4200040,
+    }
+
     public class StrDurability
     {
         public int MaxDurability;
+        public float DepletionRate = 1.0f;
     }
 
 
@@ -31,22 +53,21 @@ namespace WorkInProgress
 
         public static readonly Dictionary<eItemIDs, StrDurability> ItemDurabilities = new Dictionary<eItemIDs, StrDurability>
         {
-            {
-                eItemIDs.FlintAndSteel,
-                new StrDurability { MaxDurability = 5 }
-            },
-            {
-                eItemIDs.BedrollKit,
-                new StrDurability {
-                    MaxDurability = 5
-                }
-            },
-            {
-                eItemIDs.Bedroll,
-                new StrDurability {
-                    MaxDurability = 5
-                }
-            },
+            { eItemIDs.FlintAndSteel, new StrDurability { MaxDurability = 5 } },
+            { eItemIDs.BedrollKit, new StrDurability { MaxDurability = 5 } },
+            { eItemIDs.Bedroll, new StrDurability { MaxDurability = 5 } },
+            { eItemIDs.Tent, new StrDurability { MaxDurability = 10 } },
+            { eItemIDs.TentKit, new StrDurability { MaxDurability = 10 } },
+            { eItemIDs.CamoTentKit, new StrDurability { MaxDurability = 10 } },
+            { eItemIDs.CamoTent, new StrDurability { MaxDurability = 10 } },
+            { eItemIDs.FurTentKit, new StrDurability { MaxDurability = 10 } },
+            { eItemIDs.FurTent, new StrDurability { MaxDurability = 10 } },
+            { eItemIDs.LuxuryTentKit, new StrDurability { MaxDurability = 20 } },
+            { eItemIDs.LuxuryTent, new StrDurability { MaxDurability = 20 } },
+            { eItemIDs.MageTentKit, new StrDurability { MaxDurability = 20 } },
+            { eItemIDs.MageTent, new StrDurability { MaxDurability = 20 } },
+            { eItemIDs.CleanWater, new StrDurability { MaxDurability = 5*24 } },
+            { eItemIDs.RiverWater, new StrDurability { MaxDurability = 2*24 } },
         };
 
         internal void Awake()
@@ -61,7 +82,7 @@ namespace WorkInProgress
             }
             catch (Exception ex)
             {
-                MyLogger.LogError(ex.Message);
+                MyLogger.LogError("Awake: " + ex.Message);
             }
         }
 
@@ -69,14 +90,15 @@ namespace WorkInProgress
         {
             try
             {
-                var prefab = CustomItems.CreateCustomItem((int)eItemIDs.FlintAndSteel, (int)eItemIDs.FlintAndSteel, eItemIDs.FlintAndSteel.ToString());
+                /*var prefab = CustomItems.CreateCustomItem((int)eItemIDs.FlintAndSteel, (int)eItemIDs.FlintAndSteel, eItemIDs.FlintAndSteel.ToString());
                 MultipleUsage m_stackable = (MultipleUsage)AccessTools.Field(typeof(Item), "m_stackable").GetValue(prefab);
                 m_stackable.AutoStack = false;
                 var stats = prefab.GetComponent<ItemStats>();
                 AccessTools.Field(typeof(ItemStats), "m_baseMaxDurability").SetValue(stats, ItemDurabilities[eItemIDs.FlintAndSteel].MaxDurability);
-                prefab.BehaviorOnNoDurability = Item.BehaviorOnNoDurabilityType.Destroy;
+                prefab.BehaviorOnNoDurability = Item.BehaviorOnNoDurabilityType.Destroy;//*/
 
-                prefab = CustomItems.CreateCustomItem((int)eItemIDs.BedrollKit, (int)eItemIDs.BedrollKit, eItemIDs.BedrollKit.ToString());
+                #region Tentes
+                /*prefab = CustomItems.CreateCustomItem((int)eItemIDs.BedrollKit, (int)eItemIDs.BedrollKit, eItemIDs.BedrollKit.ToString());
                 stats = prefab.GetComponent<ItemStats>();
                 AccessTools.Field(typeof(ItemStats), "m_baseMaxDurability").SetValue(stats, ItemDurabilities[eItemIDs.BedrollKit].MaxDurability);
                 prefab.BehaviorOnNoDurability = Item.BehaviorOnNoDurabilityType.DoNothing;
@@ -86,13 +108,61 @@ namespace WorkInProgress
 
                 prefab = CustomItems.CreateCustomItem((int)eItemIDs.TentKit, (int)eItemIDs.TentKit, eItemIDs.TentKit.ToString());
                 stats = prefab.GetComponent<ItemStats>();
-                AccessTools.Field(typeof(ItemStats), "m_baseMaxDurability").SetValue(stats, 10);
+                AccessTools.Field(typeof(ItemStats), "m_baseMaxDurability").SetValue(stats, ItemDurabilities[eItemIDs.TentKit].MaxDurability);
                 prefab.BehaviorOnNoDurability = Item.BehaviorOnNoDurabilityType.DoNothing;
+                prefab.gameObject.AddComponent<CustomDurable>();
+                prefab = CustomItems.CreateCustomItem((int)eItemIDs.Tent, (int)eItemIDs.Tent, "whatever");
+                prefab.gameObject.AddComponent<CustomDurable>();
 
-                prefab = CustomItems.CreateCustomItem((int)eItemIDs.CamoTentKit, (int)eItemIDs.CamoTentKit, eItemIDs.CamoTentKit.ToString());
+                //prefab = CustomItems.CreateCustomItem((int)eItemIDs.CamoTentKit, (int)eItemIDs.CamoTentKit, eItemIDs.CamoTentKit.ToString());
+                //stats = prefab.GetComponent<ItemStats>();
+                //AccessTools.Field(typeof(ItemStats), "m_baseMaxDurability").SetValue(stats, 15);
+                //prefab.BehaviorOnNoDurability = Item.BehaviorOnNoDurabilityType.DoNothing;
+
+                var repareTent = new SL_Recipe
+                {
+                    StationType = Recipe.CraftingType.Survival,
+                    Ingredients = new List<SL_Recipe.Ingredient>
+                    {
+                        new SL_Recipe.Ingredient{Type = RecipeIngredient.ActionTypes.AddSpecificIngredient, Ingredient_ItemID = (int)eItemIDs.TentKit },
+                        new SL_Recipe.Ingredient{Type = RecipeIngredient.ActionTypes.AddSpecificIngredient, Ingredient_ItemID = 6500090 }, // Linen Cloth
+                        new SL_Recipe.Ingredient{Type = RecipeIngredient.ActionTypes.AddSpecificIngredient, Ingredient_ItemID = 6500090 }, // Linen Cloth
+                    },
+                    Results = new List<SL_Recipe.ItemQty>
+                    {
+                        new SL_Recipe.ItemQty{ ItemID = (int)eItemIDs.TentKit, Quantity = 1 }
+                    }
+                };
+                repareTent.ApplyRecipe();
+                //*/
+                #endregion
+
+                #region Waterskin
+                /*prefab = CustomItems.CreateCustomItem((int)eItemIDs.Waterskin, (int)eItemIDs.Waterskin, eItemIDs.Waterskin.ToString());
                 stats = prefab.GetComponent<ItemStats>();
-                AccessTools.Field(typeof(ItemStats), "m_baseMaxDurability").SetValue(stats, 15);
+                AccessTools.Field(typeof(ItemStats), "m_baseMaxDurability").SetValue(stats, ItemDurabilities[eItemIDs.CleanWater].MaxDurability);
                 prefab.BehaviorOnNoDurability = Item.BehaviorOnNoDurabilityType.DoNothing;
+                var p = prefab.gameObject.AddComponent<Perishable>();
+                AccessTools.Field(typeof(Perishable), "m_baseDepletionRate").SetValue(p, ItemDurabilities[eItemIDs.CleanWater].DepletionRate);
+
+                // Add RecipeItems
+                var r = new SL_Recipe
+                {
+                    StationType = Recipe.CraftingType.Cooking,
+                    Ingredients = new List<SL_Recipe.Ingredient>
+                    {
+                        new SL_Recipe.Ingredient{Type = RecipeIngredient.ActionTypes.AddSpecificIngredient, Ingredient_ItemID = 5600003 },
+                        // 4000210 = Ochre Spice Beetle
+                        // 4000211 = Gravel Beetle
+                        new SL_Recipe.Ingredient{Type = RecipeIngredient.ActionTypes.AddSpecificIngredient, Ingredient_ItemID = 4000211 },
+                    },
+                    Results = new List<SL_Recipe.ItemQty>
+                    {
+                        new SL_Recipe.ItemQty{ ItemID = 5600000, Quantity = 1 }
+                    }
+                };
+                r.ApplyRecipe();//*/
+                #endregion
 
             }
             catch (Exception ex)
@@ -101,45 +171,8 @@ namespace WorkInProgress
             }
         }
 
-
-
-        //obj = new GameObject(ID);
-        //GameObject.DontDestroyOnLoad(obj);
-        //script = obj.AddComponent<TestScript>();
-
-        /*obj = new GameObject(ID);
-        GameObject.DontDestroyOnLoad(obj);
-        script = obj.AddComponent<SortingScript>();*/
-
-        // Disable flag showing new items
-        //On.Item.ChangeOwner += Item_ChangeOwner;
-
         // Repair all items in inventory: CharacterEquipment.RepairEquipment
         //On.CharacterEquipment.RepairEquipmentAfterRest += CharacterEquipment_RepairEquipmentAfterRest;
-
-        // Add light on wandering npcs
-        //On.SNPC.OnEnable += SNPC_OnEnable;
-
-        #region Skills tests
-        //On.CharacterEquipment.GetTotalMovementModifier += CharacterEquipment_GetTotalMovementModifier; // Update skill value
-        //On.ItemDetailsDisplay.RefreshDetail += ItemDetailsDisplay_RefreshDetail; // Update display with Passive skills modificators
-        //On.ResourcesPrefabManager.GenerateItem += ResourcesPrefabManager_GenerateItem;
-        //On.LocalizationManager.GetItemName += LocalizationManager_GetItemName;
-        //On.LocalizationManager.GetItemDesc += LocalizationManager_GetItemDesc;
-        //On.Trainer.GetSkillTree += Trainer_GetSkillTree;
-        ////On.CharacterSave.PrepareSave += CharacterSave_PrepareSave;
-        ///*On.ItemManager.OnReceiveItemSync += ItemManager_OnReceiveItemSync;
-        ////On.ItemManager.LoadItems += ItemManager_LoadItems;
-        ////On.ItemManager.LoadItemsForCharacter += ItemManager_LoadItemsForCharacter;
-        ////On.EnvironmentSave.ApplyData += EnvironmentSave_ApplyData;
-        //On.EnvironmentSave.PrepareSave += EnvironmentSave_PrepareSave;
-        //On.ItemManager.CreateItemFromData += ItemManager_CreateItemFromData;
-        //On.ItemManager.AddStaticItemUID += ItemManager_AddStaticItemUID;*/
-        #endregion
-
-        #region Spawn Adventurers
-        //On.SNPC.StartIdleAnim += SNPC_StartIdleAnim;
-        #endregion
 
         #region Sorting items
         /*On.LocalCharacterControl.UpdateInteraction += LocalCharacterControl_UpdateInteraction;
@@ -152,156 +185,6 @@ namespace WorkInProgress
         //On.ItemDetailsDisplay.GetTemporaryDesc += ItemDetailsDisplay_GetTemporaryDesc;
 
         //On.PlayerCharacterStats.UpdateWeight += PlayerCharacterStats_UpdateWeight; // Burden malus
-
-        //On.Character.DodgeAllowed += Character_DodgeAllowed;
-        //On.Character.DodgeInput_1 += Character_DodgeInput_1;
-
-        //On.EnvironmentSave.PrepareSave += EnvironmentSave_PrepareSave;
-
-        /*private void Character_DodgeInput_1(On.Character.orig_DodgeInput_1 orig, Character self, Vector3 _direction)
-        {
-            //orig(self, _direction);
-            OLogger.Log("DodgeInput");
-            bool m_preparingToSleep = (bool)AccessTools.Field(typeof(Character), "m_preparingToSleep").GetValue(self);
-            bool m_currentlyChargingAttack = (bool)AccessTools.Field(typeof(Character), "m_currentlyChargingAttack").GetValue(self);
-            bool m_inLocomotion = (bool)AccessTools.Field(typeof(Character), "m_inLocomotion").GetValue(self);
-            bool m_nextIsLocomotion = (bool)AccessTools.Field(typeof(Character), "m_nextIsLocomotion").GetValue(self);
-            int m_dodgeAllowedInAction = (int)AccessTools.Field(typeof(Character), "m_dodgeAllowedInAction").GetValue(self);
-            if (!self.IsPhotonPlayerLocal 
-                || !(self.Stats.MovementSpeed > 0f) 
-                || m_preparingToSleep 
-                //|| !self.HasEnoughStamina(6f)
-                || (self.LocomotionAction && !m_currentlyChargingAttack) 
-                //|| ((!m_inLocomotion || !m_nextIsLocomotion) && !m_nextIsLocomotion && m_dodgeAllowedInAction <= 0)
-                )
-            {
-                return;
-            }
-            //AccessTools.Method(typeof(Character), "CancelActions").Invoke(self, null);
-            m_dodgeAllowedInAction = 0;
-            if ((bool)self.CharacterCamera && self.CharacterCamera.InZoomMode)
-            {
-                self.SetZoomMode(_zoomed: false);
-            }
-            SpellCastType m_currentSpellCastType = (SpellCastType)AccessTools.Field(typeof(Character), "m_currentSpellCastType").GetValue(self);
-            if (m_currentSpellCastType != SpellCastType.NONE)
-            {
-                if (m_currentSpellCastType == SpellCastType.PickupBagGround || m_currentSpellCastType == SpellCastType.DropBagGround)
-                {
-                    OLogger.Log("\tcancel");
-                    self.ForceCancel(_backToLocomotion: false);
-                }
-                self.ResetCastType();
-            }
-            //self.ForceCancel(_backToLocomotion: false);
-            self.photonView.RPC("SendDodgeTriggerTrivial", PhotonTargets.All, _direction);
-            //self.ActionPerformed();
-            self.Invoke("ResetDodgeTrigger", 0.5f);
-        }//*/
-
-        /*private void Character_DodgeAllowed(On.Character.orig_DodgeAllowed orig, Character self, int _allowed)
-        {
-            orig(self, _allowed);
-            OLogger.Log("DodgeAllowed");
-            //Animator m_animator = (Animator)AccessTools.Field(typeof(Character), "m_animator").GetValue(self);
-            //AnimatorStateInfo nextAnimatorStateInfo = m_animator.GetNextAnimatorStateInfo(0);
-            //if (nextAnimatorStateInfo.length == 0f || nextAnimatorStateInfo.IsTag("Locomotion"))
-            //{
-            //    AccessTools.Field(typeof(Character), "m_dodgeAllowedInAction").SetValue(self, _allowed);
-            //    //m_dodgeAllowedInAction = _allowed;
-            //}
-        }//*/
-
-        //private void ItemManager_AddStaticItemUID(On.ItemManager.orig_AddStaticItemUID orig, ItemManager self, Item _newItem, string _UID)
-        //{
-        //    if (_newItem.ItemIDString.StartsWith("820522")) OLogger.Log($"AddStaticItemUID={_newItem.Name}");
-        //    orig(self, _newItem, _UID);
-        //}
-
-        //private bool ItemManager_CreateItemFromData(On.ItemManager.orig_CreateItemFromData orig, ItemManager self, string itemUID, string[] itemInfos, bool _characterItem)
-        //{
-        //    if (itemInfos[1].StartsWith("820522")) OLogger.Log($"CreateItemFromData={string.Join(",", itemInfos)}");
-        //    bool res = orig(self, itemUID, itemInfos, _characterItem);
-        //    return res;
-        //}
-
-        //private void EnvironmentSave_PrepareSave(On.EnvironmentSave.orig_PrepareSave orig, EnvironmentSave self)
-        //{
-        //    OLogger.Log("EnvironmentSave_PrepareSave");
-        //    orig(self);
-        //    OLogger.Log(self.ItemList.Count);
-        //    DictionaryExt<string, Item> worldItems = ItemManager.Instance.WorldItems; // uniquement les skills appris !
-        //    Item _outValue = null;
-        //    foreach (string key in worldItems.Keys)
-        //    {
-        //        if (!worldItems.TryGetValue(key, out _outValue) || !_outValue.ItemIDString.StartsWith("820522")) continue;
-        //        OLogger.Log($"{_outValue.Name}={_outValue.ItemIDString}");
-        //        /*if (worldItems.TryGetValue(key, out _outValue) && !_outValue.IsChildToPlayer && !_outValue.NonSavable && !_outValue.IsPendingDestroy && !_outValue.IsBeingTaken && (_outValue.OwnerCharacter == null || !_outValue.OwnerCharacter.IsItemCharacter) && (!(bool)_outValue.OwnerCharacter || !_outValue.OwnerCharacter.NonSavable) && !(_outValue is Quest))
-        //        {
-        //            OLogger.Log($"{_outValue.Name}={_outValue.ItemIDString}");
-        //        }*/
-        //        OLogger.Log($"{_outValue.ItemIDString}={_outValue.IsChildToPlayer} {_outValue.OwnerCharacter == null}");
-        //        if (!_outValue.IsChildToPlayer)
-        //        {
-        //            var sa = self.ItemList.FirstOrDefault(i => i.Identifier == _outValue.SaveIdentifier);
-        //            if (sa != null)
-        //            {
-        //                self.ItemList.Remove(sa);
-        //            }
-        //        }
-        //    }
-        //    OLogger.Log(self.ItemList.Count);
-        //}
-
-        //private void EnvironmentSave_ApplyData(On.EnvironmentSave.orig_ApplyData orig, EnvironmentSave self)
-        //{
-        //    OLogger.Log("EnvironmentSave_ApplyData");
-        //    orig(self);
-        //}
-
-        //private void ItemManager_LoadItemsForCharacter(On.ItemManager.orig_LoadItemsForCharacter orig, ItemManager self, string _charUID, BasicSaveData[] _itemSaves)
-        //{
-        //    OLogger.Log("LoadItemsForCharacter");
-        //    orig(self, _charUID, _itemSaves);
-        //}
-
-        //private void ItemManager_LoadItems(On.ItemManager.orig_LoadItems orig, ItemManager self, List<BasicSaveData> _itemSaves, bool _clearAllItems)
-        //{
-        //    OLogger.Log("LoadItems");
-        //    orig(self, _itemSaves, _clearAllItems);
-        //}
-
-        //private void ItemManager_OnReceiveItemSync(On.ItemManager.orig_OnReceiveItemSync orig, ItemManager self, string _itemInfos, ItemManager.ItemSyncType _syncType)
-        //{
-        //    OLogger.Log("OnReceiveItemSync");
-        //    orig(self, _itemInfos, _syncType);
-        //    string[] array = _itemInfos.Split('~');
-        //    foreach (var item in array)
-        //    {
-        //        if (item.Contains("820522"))
-        //            OLogger.Log(item);
-        //    }
-        //}
-
-        //private void CharacterSave_PrepareSave(On.CharacterSave.orig_PrepareSave orig, CharacterSave self)
-        //{
-        //    orig(self);
-        //    OLogger.Log("CharacterSave_PrepareSave");
-        //    Character character = CharacterManager.Instance.GetCharacter(self.PSave.UID);
-        //    Item item = null;
-        //    foreach (string key in ItemManager.Instance.WorldItems.Keys)
-        //    {
-        //        item = ItemManager.Instance.WorldItems[key];
-        //        if (item.ItemIDString.Contains("820522"))
-        //        {
-        //            OLogger.Log($"{item.Name}");
-        //        }
-        //    }
-        //    /*foreach (BasicSaveData sv in self.ItemList)
-        //    {
-        //        OLogger.Log($"{sv.SyncData}");
-        //    }*/
-        //}
 
         //private void PlayerCharacterStats_UpdateWeight(On.PlayerCharacterStats.orig_UpdateWeight orig, PlayerCharacterStats self)
         //{
@@ -492,29 +375,6 @@ namespace WorkInProgress
         //    }
         //}
 
-        //private void NetworkLevelLoader_UnPauseGameplay(On.NetworkLevelLoader.orig_UnPauseGameplay orig, NetworkLevelLoader self, string _identifier)
-        //{
-        //    orig(self, _identifier);
-        //}
-
-        //private void NPCInteraction_OnActivate(On.NPCInteraction.orig_OnActivate orig, NPCInteraction self)
-        //{
-        //    orig(self);
-        //    try
-        //    {
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        OLogger.Error("NPCInteraction_OnActivate:" + ex.Message);
-        //    }
-        //}
-
-        //private void SNPC_StartIdleAnim(On.SNPC.orig_StartIdleAnim orig, SNPC self, float _blend)
-        //{
-        //    orig(self, _blend);
-        //    OLogger.Log($"StartIdle={self.IdleAnimations[0]}");
-        //}
-
         //private int ItemListDisplay_SortByRatio(ItemDisplay _item1, ItemDisplay _item2)
         //{
         //    if (_item1.isActiveAndEnabled && _item2.isActiveAndEnabled)
@@ -560,258 +420,6 @@ namespace WorkInProgress
         //    }
         //}
 
-        //#region Skills
-        //private Item ResourcesPrefabManager_GenerateItem(On.ResourcesPrefabManager.orig_GenerateItem orig, ResourcesPrefabManager self, string _itemIDString)
-        //{
-        //    try
-        //    {
-        //        if (_itemIDString == NewSkillArmorExpertID.ToString() && !m_isSkillLoaded)
-        //        {
-        //            Dictionary<string, Item> ITEM_PREFABS = (Dictionary<string, Item>)AccessTools.Field(typeof(ResourcesPrefabManager), "ITEM_PREFABS").GetValue(self);
-        //            /*if (!ITEM_PREFABS.ContainsKey(_itemIDString))
-        //            {
-        //                Debug.LogError("Invalid ItemID " + _itemIDString);
-        //                return null;
-        //            }*/
-        //            //m_isSkillLoaded = true;
-        //            Item item = ITEM_PREFABS["8205220"];
-        //            try
-        //            {
-        //                item = UnityEngine.Object.Instantiate(item);
-        //                if (!(bool)item)
-        //                {
-        //                    return item;
-        //                }
-        //                item.ItemID = NewSkillArmorExpertID;
-        //                item.name = NewSkillArmorExpertID.ToString() + "_ArmorExpert";
-        //                item.gameObject.SetActive(value: true);
-        //                return item;
-        //            }
-        //            catch (Exception message)
-        //            {
-        //                Debug.LogError(message);
-        //                return item;
-        //            }
-        //        }
-        //        else
-        //        {
-        //            return orig(self, _itemIDString);
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        //DoOloggerError(ex.Message);
-        //        //Debug.Log($"[{m_modName}] SkillTreeDisplay_RefreshTree: {ex.Message}");
-        //        OLogger.Error(ex.Message);
-        //    }
-        //    return orig(self, _itemIDString);
-        //}
-        //private SkillSchool Trainer_GetSkillTree(On.Trainer.orig_GetSkillTree orig, Trainer self)
-        //{
-        //    SkillSchool _tree = orig(self);
-        //    if (_tree == null) return null;
-
-        //    //OLogger.Log($"SkillSchool={_tree.name}");
-        //    List<SkillBranch> lstBranchs = (List<SkillBranch>)AccessTools.Field(typeof(SkillSchool), "m_branches").GetValue(_tree);
-
-        //    /*for (int i = 0; i < _tree.SkillSlots.Count; i++)
-        //    {
-        //        BaseSkillSlot slot = _tree.SkillSlots[i];
-        //        OLogger.Log($"{i}: {slot.GetType().Name}");
-        //        if (slot is SkillSlot)
-        //        {
-        //            SkillSlot ss = slot as SkillSlot;
-        //            if (ss.Skill != null) OLogger.Log($" |-   Skill: {ss.Skill.DisplayName}");
-        //            OLogger.Log($" |-   ColIdx: {ss.ColumnIndex}");
-        //            if (ss.ParentBranch != null) OLogger.Log($" |-   ParentBranch: {ss.ParentBranch.Index}");
-        //            //if (ss.RequiredSkillSlot != null) OLogger.Log($" |-   Req: {ss.RequiredSkillSlot}");
-        //            //if (ss.SiblingSlot != null) OLogger.Log($" |-   Sibling: {ss.SiblingSlot}");
-        //        }
-        //        else
-        //        {
-        //            //OLogger.Log($" |- {slot.GetType().Name}");
-        //        }
-        //    }//*/
-
-        //    // Add new skill
-        //    if (_tree.name == "AbrassarMercenary")
-        //    {
-        //        Skill skNew = (Skill)ResourcesPrefabManager.Instance.GenerateItem(NewSkillArmorExpertID.ToString());
-        //        SkillSlot slotNew = UnityEngine.Object.Instantiate((SkillSlot)_tree.SkillSlots[3]);
-        //        AccessTools.Field(typeof(SkillSlot), "m_columnIndex").SetValue(slotNew, 3);
-        //        slotNew.ParentBranch = lstBranchs.First(b => b.name == "Row4");
-        //        slotNew.RequiredSkillSlot = _tree.SkillSlots[3];
-        //        slotNew.RequiresBreakthrough = true;
-        //        AccessTools.Field(typeof(SkillSlot), "m_requiredAffiliatedFaction").SetValue(slotNew, Character.StoryFactions.None);
-        //        AccessTools.Field(typeof(SkillSlot), "m_skill").SetValue(slotNew, skNew);
-        //        AccessTools.Field(typeof(SkillSlot), "m_requiredMoney").SetValue(slotNew, 1500);
-        //        _tree.SkillSlots.Add(slotNew);
-        //        slotNew.ParentBranch.SkillSlots.Add(slotNew);
-        //    }
-
-        //    return _tree;
-        //}
-        //private string LocalizationManager_GetItemDesc(On.LocalizationManager.orig_GetItemDesc orig, LocalizationManager self, int _itemID)
-        //{
-        //    switch (_itemID)
-        //    {
-        //        case NewSkillArmorExpertID:
-        //            return "Removes the stamina and movement penalties from wearing armor.";
-        //        default:
-        //            return orig(self, _itemID);
-        //    }
-        //}
-        //private string LocalizationManager_GetItemName(On.LocalizationManager.orig_GetItemName orig, LocalizationManager self, int _itemID)
-        //{
-        //    switch (_itemID)
-        //    {
-        //        case NewSkillArmorExpertID:
-        //            return "Armor Mastering";
-        //        default:
-        //            return orig(self, _itemID);
-        //    }
-        //}
-        //private bool ItemDetailsDisplay_RefreshDetail(On.ItemDetailsDisplay.orig_RefreshDetail orig, ItemDetailsDisplay self, int _rowIndex, ItemDetailsDisplay.DisplayedInfos _infoType)
-        //{
-        //    try
-        //    {
-        //        string locItemStat = "";
-        //        float alteredPenalty = 0f;
-        //        bool flag = self.LocalCharacter.Inventory.SkillKnowledge.IsItemLearned(8205220);
-        //        bool flag2 = self.LocalCharacter.Inventory.SkillKnowledge.IsItemLearned(NewSkillArmorExpertID);
-        //        Equipment cachedEquip = (Equipment)AccessTools.Field(typeof(ItemDetailsDisplay), "cachedEquipment").GetValue(self);
-        //        //OLogger.Log($"{cachedEquip.DisplayName} ({cachedEquip.ItemIDString})");
-        //        if (_infoType == ItemDetailsDisplay.DisplayedInfos.MovementPenalty /*&& self.LocalCharacter != null && self.LocalCharacter.IsLocalPlayer*/)
-        //        {
-        //            if (cachedEquip.MovementPenalty > 0f)
-        //            {
-        //                if (flag)
-        //                {
-        //                    alteredPenalty = cachedEquip.MovementPenalty * 0.5f;
-        //                }
-        //                if (flag2)
-        //                {
-        //                    alteredPenalty = 0f;
-        //                }
-        //                locItemStat = "ItemStat_MovementPenalty";
-        //            }
-        //        }
-        //        if (_infoType == ItemDetailsDisplay.DisplayedInfos.StamUsePenalty /*&& self.LocalCharacter != null && self.LocalCharacter.IsLocalPlayer*/)
-        //        {
-        //            if (cachedEquip.StaminaUsePenalty > 0f && flag)
-        //            {
-        //                if (flag)
-        //                {
-        //                    alteredPenalty = cachedEquip.StaminaUsePenalty * 0.5f;
-        //                }
-        //                if (flag2)
-        //                {
-        //                    alteredPenalty = 0f;
-        //                }
-        //                locItemStat = "ItemStat_StaminaUsePenalty";
-        //            }
-        //        }
-        //        if (_infoType == ItemDetailsDisplay.DisplayedInfos.HeatRegenPenalty /*&& self.LocalCharacter != null && self.LocalCharacter.IsLocalPlayer*/)
-        //        {
-        //            if (cachedEquip.StaminaUsePenalty > 0f && flag)
-        //            {
-        //                if (flag)
-        //                {
-        //                    alteredPenalty = cachedEquip.HeatRegenPenalty * 0.5f;
-        //                }
-        //                if (flag2)
-        //                {
-        //                    alteredPenalty = 0f;
-        //                }
-        //                locItemStat = "ItemStat_HeatRegenPenalty";
-        //            }
-        //        }
-        //        if (!string.IsNullOrEmpty(locItemStat) && alteredPenalty >= 0f)
-        //        {
-        //            ItemDetailRowDisplay row = (ItemDetailRowDisplay)AccessTools.Method(typeof(ItemDetailsDisplay), "GetRow").Invoke(self, new object[] { _rowIndex });
-        //            string penDisp = (string)AccessTools.Method(typeof(ItemDetailsDisplay), "GetPenaltyDisplay").Invoke(self, new object[] {
-        //                0f - alteredPenalty, false, true });
-        //            if (alteredPenalty > 0f)
-        //            {
-        //                row.SetInfo(LocalizationManager.Instance.GetLoc(locItemStat), penDisp);
-        //            }
-        //            else
-        //            {
-        //                row.Hide();
-        //            }
-        //            return true;
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        OLogger.Error(ex.Message);
-        //    }
-        //    return orig(self, _rowIndex, _infoType);
-        //}
-        //private float CharacterEquipment_GetTotalMovementModifier(On.CharacterEquipment.orig_GetTotalMovementModifier orig, CharacterEquipment self)
-        //{
-        //    float num = 0f;
-        //    Character m_character = (Character)AccessTools.Field(typeof(CharacterEquipment), "m_character").GetValue(self);
-        //    bool flag = m_character.Inventory.SkillKnowledge.IsItemLearned(8205220);
-        //    bool flag2 = m_character.Inventory.SkillKnowledge.IsItemLearned(NewSkillArmorExpertID);
-        //    for (int i = 0; i < self.EquipmentSlots.Length; i++)
-        //    {
-        //        if (!self.HasItemEquipped(i) || (self.EquipmentSlots[i].SlotType == EquipmentSlot.EquipmentSlotIDs.LeftHand && self.EquipmentSlots[i].EquippedItem.TwoHanded))
-        //        {
-        //            continue;
-        //        }
-        //        float num2 = self.EquipmentSlots[i].EquippedItem.MovementPenalty;
-        //        if (num2 > 0f)
-        //        {
-        //            num2 *= m_character.Stats.EquipmentPenaltyModifier;
-        //            if (flag)
-        //            {
-        //                num2 *= 0.5f;
-        //            }
-        //            if (flag2)
-        //            {
-        //                num2 = 0f; //*= 0.25f;
-        //            }
-        //        }
-        //        num += num2 * 0.01f;
-        //    }
-        //    //OLogger.Log($"GetTotalMovementModifier={num}");
-        //    return num;
-        //}
-        //#endregion
-
-        //#region Light on NPC
-        //private void ItemLanternVisual_Light(On.ItemLanternVisual.orig_Light orig, ItemLanternVisual self, bool _light, bool _force)
-        //{
-        //    orig(self, _light, _force);
-        //    OLogger.Log($"colorTemperature={self.LanternLight.colorTemperature}");
-        //    OLogger.Log($"type={self.LanternLight.type}");
-        //    OLogger.Log($"intensity={self.LanternLight.intensity}");
-        //    //OLogger.Log($"position={self.LanternLight.transform.position}");
-        //}
-        //private void SNPC_OnEnable(On.SNPC.orig_OnEnable orig, SNPC self)
-        //{
-        //    orig(self);
-        //    try
-        //    {
-        //        if (self.gameObject != null)
-        //        {
-        //            Light testLi = self.gameObject.AddComponent<Light>();
-        //            testLi.color = new Color(1.0f, 0.785f, 0.5f, 1.0f);
-        //            testLi.type = LightType.Point;
-        //            testLi.intensity = 1.1f;
-        //            testLi.colorTemperature = 6570;
-        //            //testLi.transform.position = self.transform.position + new Vector3(0f, 0.3f, 0f);
-        //            //OLogger.Log($"SNPC_OnEnable={self.name}");
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        //OLogger.Error(ex.Message);
-        //    }
-        //}
-        //#endregion
-
         //private void CharacterEquipment_RepairEquipmentAfterRest(On.CharacterEquipment.orig_RepairEquipmentAfterRest orig, CharacterEquipment self)
         //{
         //    orig(self);
@@ -850,20 +458,6 @@ namespace WorkInProgress
         //    catch (Exception ex)
         //    {
         //        Debug.Log($"[{_modName}] RepairEquipmentAfterRest: {ex.Message}");
-        //    }
-        //}
-
-        //private void Item_ChangeOwner(On.Item.orig_ChangeOwner orig, Item self, Character _newOwner)
-        //{
-        //    orig(self, _newOwner);
-        //    try
-        //    {
-        //        AccessTools.Field(typeof(Item), "m_isNewInInventory").SetValue(self, false);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        OLogger.Error("OnEnable: " + ex.Message);
-        //        Debug.Log($"[{_modName}] OnEnable: {ex.Message}");
         //    }
         //}
 

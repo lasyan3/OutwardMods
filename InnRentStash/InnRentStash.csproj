@@ -67,20 +67,16 @@
       <HintPath>..\Libraries\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="UnityEngine.JSONSerializeModule">
-      <HintPath>..\Libraries\UnityEngine.JSONSerializeModule.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>..\Libraries\UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConfigurationManagerAttributes.cs" />
     <Compile Include="Hooks\CharacterInventory_InventoryIngredients.cs" />
     <Compile Include="Hooks\InteractionOpenChest_OnActivate.cs" />
     <Compile Include="Hooks\ItemDetailsDisplay_RefreshDisplay.cs" />
-    <Compile Include="Hooks\LocalCharacterControl_UpdateInteraction.cs" />
     <Compile Include="Hooks\NetworkLevelLoader_UnPauseGameplay.cs" />
     <Compile Include="Hooks\NPCInteraction_OnActivate.cs" />
     <Compile Include="Hooks\QuestEventDictionary_Load.cs" />
@@ -89,13 +85,6 @@
     <Compile Include="Hooks\SaveInstance_ApplyEnvironment.cs" />
     <Compile Include="InnRentStash.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CustomKeybindingsBepInEx\CustomKeybindingsBepInEx.csproj">
-      <Project>{78ca7d1b-b8d5-4777-8de7-593778358a47}</Project>
-      <Name>CustomKeybindingsBepInEx</Name>
-      <Private>False</Private>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

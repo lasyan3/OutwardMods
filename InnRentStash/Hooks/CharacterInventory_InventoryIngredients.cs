@@ -18,11 +18,11 @@ namespace InnRentStash.Hooks
         {
             try
             {
-                if (InnRentStash.m_currentStash == null || !InnRentStash.m_currentStash.IsInteractable || !InnRentStash.m_isStashSharing)
+                if (InnRentStash.CurrentStash == null || !InnRentStash.CurrentStash.IsInteractable || !InnRentStash.Instance.ConfigStashSharing.Value)
                 {
                     return;
                 }
-                InnRentStash.MyLogger.LogDebug($"InventoryIngredients for {_craftingStationTag}");
+                //InnRentStash.MyLogger.LogDebug($"InventoryIngredients for {_craftingStationTag}");
                 /*foreach (var m in AccessTools.GetDeclaredMethods(typeof(CharacterInventory)))
                 {
                     InnRentStash.MyLogger.LogDebug($"{m.Name}");
@@ -37,15 +37,15 @@ namespace InnRentStash.Hooks
                 MethodInfo mi = AccessTools.GetDeclaredMethods(typeof(CharacterInventory)).FirstOrDefault(m => m.Name == "InventoryIngredients"
                     && m.GetParameters().Any(p => p.Name == "_items"));
                 //InnRentStash.MyLogger.LogDebug($"{mi}");
-                InnRentStash.MyLogger.LogDebug($"Before={_sortedIngredient.Count}");
+                //InnRentStash.MyLogger.LogDebug($"Before={_sortedIngredient.Count}");
                 mi.Invoke(__instance, new object[] {
-                        _craftingStationTag, _sortedIngredient, InnRentStash.m_currentStash.GetContainedItems()
+                        _craftingStationTag, _sortedIngredient, InnRentStash.CurrentStash.GetContainedItems()
                 });
-                InnRentStash.MyLogger.LogDebug($"After={_sortedIngredient.Count}");
+                //InnRentStash.MyLogger.LogDebug($"After={_sortedIngredient.Count}");
             }
             catch (Exception ex)
             {
-                InnRentStash.MyLogger.LogError(ex.Message);
+                InnRentStash.MyLogger.LogError("InventoryIngredients: " + ex.Message);
             }
         }
     }

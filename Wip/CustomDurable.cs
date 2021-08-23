@@ -4,34 +4,37 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WorkInProgress
+//namespace WorkInProgress
+//{
+public class CustomDurable : ItemExtension
 {
-    public class CustomDurable : ItemExtension
+    public float CurrentDurability = -1f;
+    public float MaxDurability = -1f;
+
+    public override string ToNetworkInfo()
     {
-        public float CurrentDurability = -1f;
-        public float MaxDurability = -1f;
-        public new bool Savable = true;
+        //WorkInProgress.Instance.MyLogger.LogDebug($"ToNetworkInfo.C={CurrentDurability.ToString() + ";" + MaxDurability.ToString()}");
+        return CurrentDurability.ToString() + ";" + MaxDurability.ToString();
+    }
 
-        public CustomDurable()
+    internal void Awake()
+    {
+        Savable = true;
+        AwakeInit();
+    }
+
+    public override void OnReceiveNetworkSync(string[] _networkInfo)
+    {
+        //WorkInProgress.Instance.MyLogger.LogDebug($"OnReceiveNetworkSync");
+        if (float.TryParse(_networkInfo[0], out float f))
         {
-            //Savable = true;
+            //WorkInProgress.Instance.MyLogger.LogDebug($"Load CustomDurable.C={f}");
+            CurrentDurability = f;
         }
-
-        public override string ToNetworkInfo()
+        if (float.TryParse(_networkInfo[1], out float f2))
         {
-            return CurrentDurability.ToString() + ";" + MaxDurability.ToString();
-        }
-
-        public override void OnReceiveNetworkSync(string[] _networkInfo)
-        {
-            if (float.TryParse(_networkInfo[1], out float f))
-            {
-                CurrentDurability = f;
-            }
-            if (float.TryParse(_networkInfo[0], out float f2))
-            {
-                MaxDurability = f2;
-            }
+            MaxDurability = f2;
         }
     }
 }
+//}

@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DynamicQuickslots
+namespace EraserElixir
 {
     [BepInPlugin(ID, NAME, VERSION)]
     public class DynamicQuickslots : BaseUnityPlugin

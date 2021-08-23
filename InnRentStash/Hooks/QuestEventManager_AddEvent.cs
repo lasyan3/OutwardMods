@@ -10,14 +10,14 @@ namespace InnRentStash.Hooks
         [HarmonyPostfix]
         public static void AddEvent(string _eventUID, bool __result)
         {
-            InnRentStash.MyLogger.LogDebug($"AddEvent({_eventUID})={__result}");
+            //InnRentStash.MyLogger.LogDebug($"AddEvent({_eventUID})={__result}");
             if (!__result) return;
             try
             {
                 AreaEnum areaN = (AreaEnum)Instance.GetAreaIndexFromSceneName(SceneManagerHelper.ActiveSceneName);
                 //if (string.IsNullOrEmpty(m_currentArea)) return res;
                 if (!InnRentStash.StashAreaToQuestEvent.ContainsKey(areaN)) return;
-                if (InnRentStash.m_currentStash == null) return;
+                if (InnRentStash.CurrentStash == null) return;
                 // If event is house buying, cancel previous rent event
                 /*if (QuestEventManager.Instance.GetQuestEvent(_eventUID).Name == $"PlayerHouse_{m_currentArea}_HouseAvailable" &&
                     QuestEventManager.Instance.HasQuestEvent(StashAreaToQuestEvent[m_currentArea].QuestEvent))
@@ -30,13 +30,13 @@ namespace InnRentStash.Hooks
                 // If event is rent, activate the stash
                 if (_eventUID == InnRentStash.StashAreaToQuestEvent[areaN].QuestEvent.EventUID)
                 {
-                    InnRentStash.m_currentStash.SetCanInteract(true);
-                    InnRentStash.MyLogger.LogDebug("Activate stash");
+                    InnRentStash.CurrentStash.SetCanInteract(true);
+                    //InnRentStash.MyLogger.LogDebug("Activate stash");
                 }
             }
             catch (Exception ex)
             {
-                InnRentStash.MyLogger.LogError(ex.Message);
+                InnRentStash.MyLogger.LogError("AddEvent: " + ex.Message);
             }
         }
     }

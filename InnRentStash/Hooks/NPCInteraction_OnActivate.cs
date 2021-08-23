@@ -30,59 +30,72 @@ namespace InnRentStash.Hooks
                 {
                     return;
                 }
-                if (__instance.ActorLocKey != InnRentStash.StashAreaToQuestEvent[areaN].NpcName || InnRentStash.m_dialogIsSet)
+                if (__instance.ActorLocKey != InnRentStash.StashAreaToQuestEvent[areaN].NpcName)
                 {
                     return;
                 }
                 var graphOwner = __instance.NPCDialogue.DialogueController;
                 var graph = (Graph)graphOwner.GetType().BaseType.GetField("_graph", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(graphOwner as GraphOwner<DialogueTreeExt>);
                 var nodes = typeof(Graph).GetField("_nodes", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(graph as Graph) as List<Node>;
-                var firstNode = nodes.First(n => n.GetType().Name == "MultipleChoiceNodeExt");
+                var firstNode = nodes.First(n => n.GetType().Name == "MultipleChoiceNodeExt") as MultipleChoiceNodeExt;
+
+                foreach (var node in graph.allNodes.Where(n => n.tag == "InnRentStash").ToList())
+                {
+                    graph.RemoveNode(node);
+                }
+                firstNode.availableChoices.RemoveAll(c => c.statement.meta == "RENT");
 
                 //TreeNode<Node>.DebugDialogue(nodes[0], 0);
                 /* Un dialogue c'est: afficher un texte + action(optionnel) + choix(optionnel)
                  * 
                  * Outil de conversion Graph --> ma structure
                  */
-                (firstNode as MultipleChoiceNodeExt).availableChoices.Insert(1, new MultipleChoiceNodeExt.Choice(new Statement("I want to rent a stash, please.")));
+                firstNode.availableChoices.Insert(1, new MultipleChoiceNodeExt.Choice(new Statement("I want to rent a stash, please.", GlobalAudioManager.Sounds.BGM_Empty, "RENT")));
                 StatementNodeExt nStart = graph.AddNode<StatementNodeExt>();
-                nStart.statement = new Statement($"Of course! Renting a stash costs only {InnRentStash.StashAreaToQuestEvent[areaN].RentPrice} silver for one week.");
+                nStart.tag = "InnRentStash";
+                nStart.statement = new Statement($"Of course! Renting a stash costs only {InnRentStash.Instance.ConfigRentPrice.Value} silver for one week.");
                 nStart.SetActorName(__instance.ActorLocKey);
                 MultipleChoiceNodeExt nChoose = graph.AddNode<MultipleChoiceNodeExt>();
+                nChoose.tag = "InnRentStash";
                 nChoose.availableChoices.Add(new MultipleChoiceNodeExt.Choice(new Statement("Sh*t up and take my money!")));
                 nChoose.availableChoices.Add(new MultipleChoiceNodeExt.Choice(new Statement("I will be back.")));
                 ConditionNode nCheckMoney = graph.AddNode<ConditionNode>();
+                nCheckMoney.tag = "InnRentStash";
                 nCheckMoney.condition = new Condition_OwnsItem()
                 {
                     character = character,
                     item = new ItemReference { ItemID = 9000010 },
-                    minAmount = InnRentStash.StashAreaToQuestEvent[areaN].RentPrice
+                    minAmount = InnRentStash.Instance.ConfigRentPrice.Value
                 };
                 ConditionNode nCheckHouse = graph.AddNode<ConditionNode>();
-
+                nCheckHouse.tag = "InnRentStash";
                 nCheckHouse.condition = new Condition_QuestEventOccured()
                 {
                     QuestEventRef = new QuestEventReference { EventUID = InnRentStash.StashAreaToQuestEvent[areaN].PlayerHouseQuestEventUID }
                 };
                 StatementNodeExt nCheckHouseBad = graph.AddNode<StatementNodeExt>();
+                nCheckHouseBad.tag = "InnRentStash";
                 nCheckHouseBad.statement = new Statement("You have a house, no need to rent a stash anymore.");
                 nCheckHouseBad.SetActorName(__instance.ActorLocKey);
                 ConditionNode nCheckAlready = graph.AddNode<ConditionNode>();
+                nCheckAlready.tag = "InnRentStash";
                 nCheckAlready.condition = new Condition_QuestEventOccured()
                 {
                     QuestEventRef = new QuestEventReference { EventUID = InnRentStash.StashAreaToQuestEvent[areaN].QuestEvent.EventUID }
                 };
                 StatementNodeExt nCheckAlreadyBad = graph.AddNode<StatementNodeExt>();
+                nCheckAlreadyBad.tag = "InnRentStash";
                 nCheckAlreadyBad.statement = new Statement("You've already rented a stash for the week! Just use it.");
                 nCheckAlreadyBad.SetActorName(__instance.ActorLocKey);
 
                 ActionNode nWishRent = graph.AddNode<ActionNode>();
+                nWishRent.tag = "InnRentStash";
                 ActionList action = new ActionList();
                 action.AddAction(new NodeCanvas.Tasks.Actions.RemoveItem()
                 {
                     fromCharacter = new BBParameter<Character>(character),
                     Items = new List<BBParameter<ItemReference>>() { new ItemReference { ItemID = 9000010 } },
-                    Amount = new List<BBParameter<int>>() { new BBParameter<int>(InnRentStash.StashAreaToQuestEvent[areaN].RentPrice) },
+                    Amount = new List<BBParameter<int>>() { new BBParameter<int>(InnRentStash.Instance.ConfigRentPrice.Value) },
                 });
                 action.AddAction(new NodeCanvas.Tasks.Actions.SendQuestEvent()
                 {
@@ -95,15 +108,19 @@ namespace InnRentStash.Hooks
                 nWishRent.action = action;
 
                 StatementNodeExt nResultOk = graph.AddNode<StatementNodeExt>();
+                nResultOk.tag = "InnRentStash";
                 nResultOk.statement = new Statement("Thanks, I've unlocked the stash for you.");
                 nResultOk.SetActorName(__instance.ActorLocKey);
                 StatementNodeExt nResultBad = graph.AddNode<StatementNodeExt>();
+                nResultBad.tag = "InnRentStash";
                 nResultBad.statement = new Statement("Sorry, you don't have enough silver. Come back when you can afford it!");
                 nResultBad.SetActorName(__instance.ActorLocKey);
                 StatementNodeExt nCancel = graph.AddNode<StatementNodeExt>();
+                nCancel.tag = "InnRentStash";
                 nCancel.statement = new Statement("See you soon!");
                 nCancel.SetActorName(__instance.ActorLocKey);
                 FinishNode nFinish = graph.AddNode<FinishNode>();
+                nFinish.tag = "InnRentStash";
 
                 graph.ConnectNodes(firstNode, nCheckHouse, 1); // Check if the player owns the house of the town
                 graph.ConnectNodes(nCheckHouse, nCheckHouseBad); // The player owns it --> exit
@@ -122,12 +139,10 @@ namespace InnRentStash.Hooks
                 graph.ConnectNodes(nResultBad, nFinish);
                 graph.ConnectNodes(nResultOk, nFinish);
                 graph.ConnectNodes(nCancel, nFinish);//*/
-
-                InnRentStash.m_dialogIsSet = true;
             }
             catch (Exception ex)
             {
-                InnRentStash.MyLogger.LogError(ex.Message);
+                InnRentStash.MyLogger.LogError("OnActivate: " + ex.Message);
             }
         }
     }

@@ -42,6 +42,9 @@
       <HintPath>..\Libraries\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>..\Libraries\Assembly-CSharp-firstpass.dll</HintPath>
+    </Reference>
     <Reference Include="BepInEx">
       <HintPath>..\Libraries\BepInEx.dll</HintPath>
       <Private>False</Private>
@@ -57,6 +60,9 @@
     <Reference Include="Rewired_Core">
       <HintPath>..\Libraries\Rewired_Core.dll</HintPath>
       <Private>False</Private>
+    </Reference>
+    <Reference Include="SideLoader">
+      <HintPath>..\Libraries\SideLoader.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -78,16 +84,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Hooks\Character_Die.cs" />
     <Compile Include="Hooks\LocalCharacterControl_UpdateInteraction.cs" />
     <Compile Include="Hooks\NetworkLevelLoader_OnApplicationQuit.cs" />
     <Compile Include="SaveSystemReworked.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CustomKeybindingsBepInEx\CustomKeybindingsBepInEx.csproj">
-      <Project>{78ca7d1b-b8d5-4777-8de7-593778358a47}</Project>
-      <Name>CustomKeybindingsBepInEx</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

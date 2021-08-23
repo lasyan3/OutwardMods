@@ -51,6 +51,10 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="netstandard" />
+    <Reference Include="SharedModConfig">
+      <HintPath>..\Libraries\SharedModConfig.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -66,16 +70,13 @@
       <HintPath>..\Libraries\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="UnityEngine.JSONSerializeModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Libraries\UnityEngine.JSONSerializeModule.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AreaSwitchPlayersTime.cs" />
     <Compile Include="Hooks\NetworkLevelLoader_UnPauseGameplay.cs" />
+    <Compile Include="Hooks\MerchantFastTravel_RefreshTravelDestinations.cs" />
     <Compile Include="Hooks\NPCInteraction_OnActivate.cs" />
+    <Compile Include="Hooks\StoreManager.cs" />
     <Compile Include="Hooks\QuestEventDictionary_Load.cs" />
     <Compile Include="SetTravelArea.cs" />
     <Compile Include="SoroboreanTravelAgency.cs" />

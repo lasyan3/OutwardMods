@@ -25,7 +25,7 @@ namespace MoreMerchantStock
                     int minDrop = _itemDrop.MinDropCount * (MoreMerchantStock.Settings.AffectMinimum ? MoreMerchantStock.Settings.Amount : 1);
                     int maxDrop = _itemDrop.MaxDropCount * MoreMerchantStock.Settings.Amount;
                     _spawnAmount = UnityEngine.Random.Range(minDrop, maxDrop + 1);
-                    MoreMerchantStock.MyLogger.LogDebug($"{_itemDrop.DroppedItem.DisplayName}={_spawnAmount} ({minDrop} - {maxDrop})");
+                    //MoreMerchantStock.MyLogger.LogDebug($"{_itemDrop.DroppedItem.DisplayName}={_spawnAmount} ({minDrop} - {maxDrop})");
                 }
             }
             catch (Exception ex)

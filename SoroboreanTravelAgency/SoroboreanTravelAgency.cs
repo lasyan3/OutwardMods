@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
+using SharedModConfig;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,14 +21,17 @@ namespace OutwardMods
         public int TravelDayCost;
     }
     [BepInPlugin(ID, NAME, VERSION)]
+    [BepInDependency("com.sinai.SharedModConfig", BepInDependency.DependencyFlags.HardDependency)]
     public class SoroboreanTravelAgency : BaseUnityPlugin
     {
-        const string ID = "com.lasyan3.soroboreantravelagency";
-        const string NAME = "SoroboreanTravelAgency";
-        const string VERSION = "1.0.3";
+        const string ID = "fr.lasyan3.SoroboreanTravelAgency";
+        const string NAME = "Soroborean Travel Agency";
+        const string VERSION = "1.1.0";
 
-        public static GameData Settings;
-        public static ManualLogSource MyLogger = BepInEx.Logging.Logger.CreateLogSource(NAME);
+        public static SoroboreanTravelAgency Instance;
+        //public static GameData Settings;
+        public ManualLogSource MyLogger { get { return Logger; } }
+        public ModConfig MyConfig;
 
         public static bool DialogIsSet = false;
         public static int TravelArea = -1;
@@ -109,25 +113,167 @@ namespace OutwardMods
                     },
                 }
             },
+            {
+                AreaEnum.CierzoOutside,
+                new List<StrTravel>() {
+                    new StrTravel {
+                        TargetArea = AreaEnum.Berg,
+                        DurationDays = 3,
+                    },
+                    new StrTravel {
+                        TargetArea = AreaEnum.Monsoon,
+                        DurationDays = 3,
+                    },
+                    new StrTravel {
+                        TargetArea = AreaEnum.Levant,
+                        DurationDays = 7,
+                    },
+                    new StrTravel {
+                        TargetArea = AreaEnum.CierzoVillage,
+                        DurationDays = 0,
+                    },
+                }
+            },
+            {
+                AreaEnum.HallowedMarsh,
+                new List<StrTravel>() {
+                    new StrTravel {
+                        TargetArea = AreaEnum.CierzoVillage,
+                        DurationDays = 3,
+                    },
+                    new StrTravel {
+                        TargetArea = AreaEnum.Berg,
+                        DurationDays = 3,
+                    },
+                    new StrTravel {
+                        TargetArea = AreaEnum.Levant,
+                        DurationDays = 7,
+                    },
+                     new StrTravel {
+                        TargetArea = AreaEnum.Monsoon,
+                        DurationDays = 0,
+                    },
+               }
+            },
+            {
+                AreaEnum.Emercar,
+                new List<StrTravel>() {
+                    new StrTravel {
+                        TargetArea = AreaEnum.CierzoVillage,
+                        DurationDays = 3,
+                    },
+                    new StrTravel {
+                        TargetArea = AreaEnum.Monsoon,
+                        DurationDays = 3,
+                    },
+                    new StrTravel {
+                        TargetArea = AreaEnum.Levant,
+                        DurationDays = 4,
+                    },
+                       new StrTravel {
+                        TargetArea = AreaEnum.Berg,
+                        DurationDays = 0,
+                    },
+             }
+            },
+            {
+                AreaEnum.Abrassar,
+                new List<StrTravel>() {
+                    new StrTravel {
+                        TargetArea = AreaEnum.Berg,
+                        DurationDays = 4,
+                    },
+                    new StrTravel {
+                        TargetArea = AreaEnum.Monsoon,
+                        DurationDays = 7,
+                    },
+                    new StrTravel {
+                        TargetArea = AreaEnum.CierzoVillage,
+                        DurationDays = 7,
+                    },
+                    new StrTravel {
+                        TargetArea = AreaEnum.Levant,
+                        DurationDays = 0,
+                    },
+                }
+            },
         };
-        public static SoroboreanTravelAgency This;
 
         internal void Awake()
         {
             try
             {
+                Instance = this;
                 var harmony = new Harmony(ID);
                 harmony.PatchAll();
-                Settings = LoadSettings();
-                MyLogger.LogDebug("Awaken");
-                This = this;
+                //Settings = LoadSettings();
+                MyConfig = SetupConfig();
+                //MyConfig.OnSettingsOpened += MyConfig_OnSettingsOpened;
+                MyConfig.OnSettingsSaved += MyConfig_OnSettingsSaved;
+                MyConfig.Register();
+                Logger.LogDebug("Awaken");
             }
             catch (Exception ex)
             {
-                MyLogger.LogError(ex.Message);
+                Logger.LogError(ex.Message);
             }
         }
 
+        private void MyConfig_OnSettingsSaved()
+        {
+            try
+            {
+                //Logger.LogDebug("MyConfig_OnSettingsSaved");
+                foreach (var aqe in AreaToQuestEvent)
+                {
+                    string settingName = aqe.Key + "Visited";
+                    bool isVisited = (bool)MyConfig.GetValue(settingName);
+                    //Logger.LogDebug("  " + settingName + "=" + isVisited);
+                    if (isVisited && !QuestEventManager.Instance.HasQuestEvent(aqe.Value))
+                    {
+                        //Logger.LogDebug("    HasQuestEvent > true");
+                        QuestEventManager.Instance.AddEvent(AreaToQuestEvent[aqe.Key]);
+                    }
+                    if (!isVisited && QuestEventManager.Instance.HasQuestEvent(aqe.Value))
+                    {
+                        //Logger.LogDebug("    NotQuestEvent > false");
+                        QuestEventManager.Instance.RemoveEvent(AreaToQuestEvent[aqe.Key].EventUID);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex.Message);
+            }
+        }
+
+        private void MyConfig_OnSettingsOpened()
+        {
+            try
+            {
+                //Logger.LogDebug("MyConfig_OnSettingsOpened");
+                foreach (var aqe in AreaToQuestEvent)
+                {
+                    string settingName = aqe.Key + "Visited";
+                    bool isVisited = (bool)MyConfig.GetValue(settingName);
+                    //Logger.LogDebug("  " + settingName + "=" + isVisited);
+                    if (QuestEventManager.Instance.HasQuestEvent(aqe.Value))
+                    {
+                        //Logger.LogDebug("    HasQuestEvent > true");
+                        MyConfig.SetValue(settingName, true);
+                    }
+                    else
+                    {
+                        //Logger.LogDebug("    NotQuestEvent > false");
+                        MyConfig.SetValue(settingName, false);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex.Message);
+            }
+        }
 
         /*private bool QuestEventManager_AddEvent_1(On.QuestEventManager.orig_AddEvent_1 orig, QuestEventManager self, string _eventUID, int _stackAmount, bool _sendEvent)
         {
@@ -139,20 +285,45 @@ namespace OutwardMods
             return res;
         }*/
 
-        private GameData LoadSettings()
+        private ModConfig SetupConfig()
         {
-            try
+            return new ModConfig
             {
-                using (StreamReader streamReader = new StreamReader($"BepInEx/config/{NAME}Config.json"))
+                ModName = NAME,
+                Settings = new List<BBSetting>
                 {
-                    return JsonUtility.FromJson<GameData>(streamReader.ReadToEnd());
+                    new FloatSetting {
+                        Name = "Travel Day Cost",
+                        Description = "Cost of a travel day (in silver)",
+                        DefaultValue = 50f,
+                        MinValue = 1f,
+                        MaxValue = 100f,
+                        Increment = 5f,
+                        //RoundTo = 0,
+                        //ShowPercent = false,
+                    },
+                    new BoolSetting {
+                        Name = "CierzoVillageVisited",
+                        Description = "Cierzo Visited",
+                        DefaultValue = false,
+                    },
+                    new BoolSetting {
+                        Name = "MonsoonVisited",
+                        Description = "Monsoon Visited",
+                        DefaultValue = false,
+                    },
+                    new BoolSetting {
+                        Name = "BergVisited",
+                        Description = "Berg Visited",
+                        DefaultValue = false,
+                    },
+                    new BoolSetting {
+                        Name = "LevantVisited",
+                        Description = "Levant Visited",
+                        DefaultValue = false,
+                    },
                 }
-            }
-            catch (Exception ex)
-            {
-                MyLogger.LogError(ex.Message);
-            }
-            return null;
+            };
         }
     }
 }

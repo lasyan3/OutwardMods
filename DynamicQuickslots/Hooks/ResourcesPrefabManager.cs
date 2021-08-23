@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DynamicQuickslots.Hooks
+namespace EraserElixir.Hooks
 {
     [HarmonyPatch(typeof(ResourcesPrefabManager), "Load")]
     class Load

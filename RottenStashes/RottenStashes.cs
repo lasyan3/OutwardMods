@@ -14,9 +14,9 @@ namespace RottenStashes
     [BepInPlugin(ID, NAME, VERSION)]
     public class RottenStashes : BaseUnityPlugin
     {
-        const string ID = "com.lasyan3.rottenstashes";
+        const string ID = "fr.lasyan3.rottenstashes";
         const string NAME = "RottenStashes";
-        const string VERSION = "1.0.1";
+        const string VERSION = "1.0.4";
 
         public static ManualLogSource MyLogger = BepInEx.Logging.Logger.CreateLogSource(NAME);
         public static double LastGameTime = 0f;

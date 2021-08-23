@@ -1,14 +1,14 @@
-﻿using DynamicQuickslots.Hooks;
+﻿using EraserElixir.Hooks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DynamicQuickslots
+namespace EraserElixir
 {
     /// <summary>
-    /// This extension contains the list of favorite quickslots for an item
+    /// This extension will store the list of favorite quickslots for an item
     /// </summary>
     public class QuickSlotSetExt : ItemExtension
     {

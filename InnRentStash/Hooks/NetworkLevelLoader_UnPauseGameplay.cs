@@ -15,7 +15,7 @@ namespace InnRentStash.Hooks
         {
             try
             {
-                InnRentStash.MyLogger.LogDebug($"UnPauseGameplay={_identifier}");
+                //InnRentStash.MyLogger.LogDebug($"UnPauseGameplay={_identifier}");
                 if (_identifier == "Loading")
                 {
                     InnRentStash.CheckRentStatus();
@@ -23,7 +23,7 @@ namespace InnRentStash.Hooks
             }
             catch (Exception ex)
             {
-                InnRentStash.MyLogger.LogError(ex.Message);
+                InnRentStash.MyLogger.LogError("UnPauseGameplay: " + ex.Message);
             }
             /*orig(self, _identifier);
             try

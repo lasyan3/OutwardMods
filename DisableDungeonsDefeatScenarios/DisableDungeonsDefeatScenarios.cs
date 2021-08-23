@@ -54,17 +54,24 @@ public class DisableDungeonsDefeatScenarios : PartialityMod
 
             //On.CharacterManager.LoadAiCharactersFromSave += CharacterManager_LoadAiCharactersFromSave; // Restore stats and remove debuffs for alive enemies
             //On.DefeatScenariosContainer.StartInit += DefeatScenariosContainer_StartInit;
-            On.DefeatScenariosContainer.AwakeInit += DefeatScenariosContainer_AwakeInit;
+            //On.DefeatScenariosContainer.AwakeInit += DefeatScenariosContainer_AwakeInit;
             //On.DefeatScenariosManager.CheckForLoadSceneDefeat += DefeatScenariosManager_CheckForLoadSceneDefeat;
-            //On.DefeatScenariosManager.ActivateDefeatScenario += DefeatScenariosManager_ActivateDefeatScenario1;
+            On.DefeatScenariosManager.ActivateDefeatScenario += DefeatScenariosManager_ActivateDefeatScenario1;
             //On.DefeatScenariosContainer.ChooseScenario += DefeatScenariosContainer_ChooseScenario;
+            On.NetworkLevelLoader.ReloadLevelAtPoint += NetworkLevelLoader_ReloadLevelAtPoint;
 
-            //OLogger.Log("DisableDungeonsDefeatScenarios is enabled");
+            //OLogger.Log("DisableDungeonsDefeatScenarios is enabled"); 
         }
         catch (Exception ex)
         {
             Debug.Log($"[{_modName}] Init: {ex.Message}");
         }
+    }
+
+    private void NetworkLevelLoader_ReloadLevelAtPoint(On.NetworkLevelLoader.orig_ReloadLevelAtPoint orig, NetworkLevelLoader self, int _spawnPoint)
+    {
+        OLogger.Log("Reload");
+        self.ReloadLevel(0f, _save: false, 0); // Disable save on Defeat Scenario
     }
 
     private DefeatScenario DefeatScenariosContainer_ChooseScenario(On.DefeatScenariosContainer.orig_ChooseScenario orig, DefeatScenariosContainer self)
@@ -76,7 +83,7 @@ public class DisableDungeonsDefeatScenarios : PartialityMod
 
     private void DefeatScenariosManager_ActivateDefeatScenario1(On.DefeatScenariosManager.orig_ActivateDefeatScenario orig, DefeatScenariosManager self, DefeatScenario _scenario)
     {
-        OLogger.Log("ActivateDefeatScenario1");
+        OLogger.Log("ActivateFailSafeDefeatScenario");
         orig(self, null);
     }
 
@@ -100,6 +107,7 @@ public class DisableDungeonsDefeatScenarios : PartialityMod
                 if (lstCh.Count(c => (c.Element is DefeatScenarioRespawn || c.Element is DefeatScenarioChangeScene && (c.Element as DefeatScenarioChangeScene).Area == areaN)
                     && c.HasValidConditions()) == 0)
                 {
+                    //OLogger.Log("No good scenarios");
                     return;
                 }
                 m_tbl.Clear();

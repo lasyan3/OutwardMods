@@ -16,4 +16,15 @@ namespace SaveSystemReworked
             return false;
         }
     }
+
+    //[HarmonyPatch(typeof(NetworkLevelLoader), "Save", new Type[] { typeof(bool), typeof(bool) })]
+    //public class NetworkLevelLoader_Save
+    //{
+    //    [HarmonyPrefix]
+    //    public static bool Save(NetworkLevelLoader __instance)
+    //    {
+    //        SaveSystemReworked.MyLogger.LogDebug("Save");
+    //        return false;
+    //    }
+    //}
 }

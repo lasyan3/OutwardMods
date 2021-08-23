@@ -25,7 +25,7 @@ namespace InnRentStash.Hooks
                             if (qevt.EventName == $"PlayerHouse_{dicStash.Key}_HouseAvailable")
                             {
                                 InnRentStash.StashAreaToQuestEvent[dicStash.Key].PlayerHouseQuestEventUID = qevt.EventUID;
-                                InnRentStash.MyLogger.LogDebug($" > {dicStash.Key}={qevt.EventUID}");
+                                //InnRentStash.MyLogger.LogDebug($" > {dicStash.Key}={qevt.EventUID}");
                             }
                         }
                     }
@@ -39,7 +39,7 @@ namespace InnRentStash.Hooks
                     {
                         if (!innSection.Events.Contains(item.QuestEvent))
                         {
-                            InnRentStash.MyLogger.LogDebug($"Add QuestEvent: {item.QuestEvent.EventName}");
+                            //InnRentStash.MyLogger.LogDebug($"Add QuestEvent: {item.QuestEvent.EventName}");
                             innSection.Events.Add(item.QuestEvent);
                         }
                         if (QuestEventDictionary.GetQuestEvent(item.QuestEvent.EventUID) == null)
@@ -51,7 +51,7 @@ namespace InnRentStash.Hooks
             }
             catch (Exception ex)
             {
-                InnRentStash.MyLogger.LogError(ex.Message);
+                InnRentStash.MyLogger.LogError("Load: " + ex.Message);
             }
         }
     }

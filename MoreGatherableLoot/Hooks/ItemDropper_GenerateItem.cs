@@ -22,21 +22,23 @@ namespace MoreGatherableLoot
                     && !_itemDrop.DroppedItem.IsDrink
                     && !_itemDrop.DroppedItem.IsEquippable
                     && !_itemDrop.DroppedItem.IsDeployable
-                    && _itemDrop.MaxDropCount < MoreGatherableLoot.Settings.AmountMax)
+                    && _itemDrop.MaxDropCount < MoreGatherableLoot.Instance.configAmountMax.Value)
                 {
-                    int minDrop = _itemDrop.MinDropCount * (MoreGatherableLoot.Settings.AlwaysMax ? MoreGatherableLoot.Settings.AmountMax : MoreGatherableLoot.Settings.AmountMin);
-                    int maxDrop = _itemDrop.MaxDropCount * MoreGatherableLoot.Settings.AmountMax;
-                    if (_itemDrop.MaxDropCount > 1 && _itemDrop.MaxDropCount < MoreGatherableLoot.Settings.AmountMax)
+                    int _amountMax = MoreGatherableLoot.Instance.configAmountMax.Value;
+                    int _amountMin = MoreGatherableLoot.Instance.configAmountMin.Value;
+                    int minDrop = _itemDrop.MinDropCount * _amountMin;
+                    int maxDrop = _itemDrop.MaxDropCount * _amountMax;
+                    if (_itemDrop.MaxDropCount > 1 && _itemDrop.MaxDropCount < _amountMax)
                     { // If already multiple quantities, increase instead of multiply
-                        minDrop = MoreGatherableLoot.Settings.AlwaysMax ? MoreGatherableLoot.Settings.AmountMax : MoreGatherableLoot.Settings.AmountMin;
-                        maxDrop = MoreGatherableLoot.Settings.AmountMax;
+                        minDrop = _amountMin;
+                        maxDrop = _amountMax;
                     }
                     // Increase count of items on specific resources (like champignons !)
                     //MoreGatherableLoot.MyLogger.LogDebug($"{_container.GetType().Name}: {_container.name.Split(new char[] { '_' })[1]}");
                     //MoreGatherableLoot.MyLogger.LogDebug($"{_itemDrop.DroppedItem.name.Split(new char[] { '_' })[1]} ({_itemDrop.MinDropCount} - {_itemDrop.MaxDropCount})");
                     _spawnAmount = UnityEngine.Random.Range(minDrop, maxDrop + 1);
                     //MoreGatherableLoot.MyLogger.LogDebug($"{_itemDrop.DroppedItem.DisplayName}={_spawnAmount} ({minDrop} - {maxDrop})");
-                    MoreGatherableLoot.MyLogger.LogDebug($"\t|- New amount={_spawnAmount} ({minDrop} - {maxDrop})");
+                    //MoreGatherableLoot.MyLogger.LogDebug($"\t|- New amount={_spawnAmount} ({minDrop} - {maxDrop})");
                 }
             }
             catch (Exception ex)

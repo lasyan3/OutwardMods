@@ -16,8 +16,7 @@ namespace InnRentStash.Hooks
             try
             {
                 //m_currentArea = _areaName;
-                InnRentStash.MyLogger.LogDebug($"ApplyEnvironment");
-                InnRentStash.m_dialogIsSet = false;
+                //InnRentStash.MyLogger.LogDebug($"ApplyEnvironment");
 
                 #region TODO : Thieves in town!
                 // Parcourir tous les objets appartenant au joueur dans la ville
@@ -37,7 +36,7 @@ namespace InnRentStash.Hooks
             }
             catch (Exception ex)
             {
-                InnRentStash.MyLogger.LogError(ex.Message);
+                InnRentStash.MyLogger.LogError("ApplyEnvironment: " + ex.Message);
             }
         }
     }

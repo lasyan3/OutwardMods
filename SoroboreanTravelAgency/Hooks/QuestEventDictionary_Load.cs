@@ -38,7 +38,7 @@ namespace OutwardMods.Hooks
             }
             catch (Exception ex)
             {
-                SoroboreanTravelAgency.MyLogger.LogError(ex.Message);
+                SoroboreanTravelAgency.Instance.MyLogger.LogError(ex.Message);
             }
         }
     }
